@@ -41,9 +41,24 @@ main(int argc, char *argv[])
   //jsl_set_debug(2);
 
 #ifndef RSM
-  lock_server ls;
-  rpcs server(atoi(argv[1]), count);
-  server.reg(lock_protocol::stat, &ls, &lock_server::stat);
+  //lock_server ls;
+  lock_server_cache ls;
+
+  rpcs server(atoi(argv[1]), count);  //atoi(argv[1]) == port, count == PRC_COUNT, or 0. Init a rpcs
+
+  //server.reg(lock_protocol::stat, &ls, &lock_server::stat); // regerist the rpcs.   
+  ////lock_protocol::stat : Unsigned int, &ls : lock_server, &lock_server::stat: a function 
+
+  //[>*****************************************************************<]
+  //server.reg(lock_protocol::acquire, &ls, &lock_server::acquire);
+  //server.reg(lock_protocol::release, &ls, &lock_server::release);
+  //[>*****************************************************************<]
+  
+  server.reg(lock_protocol::stat, &ls, &lock_server_cache::stat); // regerist the rpcs.   
+  /*******************************************************************/
+  server.reg(lock_protocol::acquire, &ls, &lock_server_cache::acquire);
+  server.reg(lock_protocol::release, &ls, &lock_server_cache::release);
+  /*******************************************************************/
 #endif
 
 
