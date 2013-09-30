@@ -11,6 +11,8 @@
 #include "marshall.h"
 #include "connection.h"
 
+#include <algorithm>	//added by shouda
+
 #ifdef DMALLOC
 #include "dmalloc.h"
 #endif
@@ -301,6 +303,33 @@ class rpcs : public chanmgr {
 
 	void free_reply_window(void);
 	void add_reply(unsigned int clt_nonce, unsigned int xid, char *b, int sz);
+
+
+/*Added by Shouda***************************************/
+	struct remove_xid_cond{
+		remove_xid_cond(const unsigned int& _xid_rep) : xid_rep(_xid_rep) {}
+		unsigned int xid_rep;
+		bool operator() (const reply_t& reply)
+		{
+			if(reply.xid <= xid_rep){
+				// delete reply.buf;
+				return true;
+			}else{
+				return false;
+			}
+			
+		}
+	};
+
+	struct find_xid_cond{
+		find_xid_cond(const unsigned int& _xid) : xid(_xid) {}
+		unsigned int xid;
+		bool operator() (const reply_t& reply)
+		{
+			return reply.xid == xid;
+		}
+	};
+/*Added end***************************************/
 
 	rpcstate_t checkduplicate_and_update(unsigned int clt_nonce, 
 			unsigned int xid, unsigned int rep_xid,
