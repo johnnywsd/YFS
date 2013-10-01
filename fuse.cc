@@ -215,6 +215,8 @@ yfs_client::status
 fuseserver_createhelper(fuse_ino_t parent, const char *name,
                         mode_t mode, struct fuse_entry_param *e)
 {
+    // fuse_ino_t -> unsigned long
+  yfs_client::status ret;
   // In yfs, timeouts are always set to 0.0, and generations are always set to 0
   e->attr_timeout = 0.0;
   e->entry_timeout = 0.0;
@@ -264,11 +266,23 @@ void
 fuseserver_lookup(fuse_req_t req, fuse_ino_t parent, const char *name)
 {
   struct fuse_entry_param e;
+  yfs_client::inum inum_p = parent; // req->in.h.nodeid;
+  yfs_client::inum inum_c; 
+  yfs_client::status ret;
+  ret = yfs->lookup(inum_p, name, inum_c);
   // In yfs, timeouts are always set to 0.0, and generations are always set to 0
   e.attr_timeout = 0.0;
   e.entry_timeout = 0.0;
   e.generation = 0;
   bool found = false;
+
+  if (ret == yfs_client::OK) {
+    struct stat st;
+    e.ino = inum_c;
+    if(getattr(inum_c, st) == yfs_client::OK)
+      e.attr = st;
+    found = true;
+  }
 
   // You fill this in for Lab 2
   if (found)
@@ -276,7 +290,22 @@ fuseserver_lookup(fuse_req_t req, fuse_ino_t parent, const char *name)
   else
     fuse_reply_err(req, ENOENT);
 }
+/*
+ * void
+fuseserver_getattr(fuse_req_t req, fuse_ino_t ino,
+                   struct fuse_file_info *fi)
+{
+    struct stat st;
+    yfs_client::inum inum = ino; // req->in.h.nodeid;
+    yfs_client::status ret;
 
+    ret = getattr(inum, st);
+    if(ret != yfs_client::OK){
+      fuse_reply_err(req, ENOENT);
+      return;
+    }
+    fuse_reply_attr(req, &st, 0);
+}*/
 
 struct dirbuf {
     char *p;

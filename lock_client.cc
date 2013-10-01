@@ -7,6 +7,7 @@
 #include <sstream>
 #include <iostream>
 #include <stdio.h>
+#include <unistd.h>
 
 lock_client::lock_client(std::string dst)
 {

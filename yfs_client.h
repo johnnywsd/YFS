@@ -4,11 +4,13 @@
 #include <string>
 //#include "yfs_protocol.h"
 #include "extent_client.h"
+#include "lock_client.h"
 #include <vector>
 
 
 class yfs_client {
   extent_client *ec;
+  lock_client *lcc;
  public:
 
   typedef unsigned long long inum;
@@ -43,6 +45,8 @@ class yfs_client {
 
   int getfile(inum, fileinfo &);
   int getdir(inum, dirinfo &);
-};
 
+  status lookup(inum inum_p, const char* name, inum inum_c);
+
+};
 #endif 

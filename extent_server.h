@@ -6,9 +6,19 @@
 #include <string>
 #include <map>
 #include "extent_protocol.h"
+#include <pthread.h>
 
 class extent_server {
 
+ private:
+    pthread_mutex_t ext_mutex;
+    struct extent_struct {
+       std::string data;
+       extent_protocol::attr file_attr;
+     };
+
+    typedef std::map<extent_protocol::extentid_t, extent_struct *> extent_storage_map;
+    extent_storage_map extent_storage;
  public:
   extent_server();
 
