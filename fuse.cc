@@ -222,7 +222,18 @@ fuseserver_createhelper(fuse_ino_t parent, const char *name,
   e->entry_timeout = 0.0;
   e->generation = 0;
   // You fill this in for Lab 2
-  return yfs_client::NOENT;
+  yfs_client::inum inum_p = parent;
+  yfs_client::inum inum_c;
+  if (yfs->createfile(inum_p, name, inum_c) == yfs_client::OK) {
+     struct stat st;
+     e->ino = inum_c;
+     if(getattr(inum_c, st) == yfs_client::OK)
+     e->attr = st;
+     printf("fusesever_createhelper parent %016lx filename %s\n, created succeed!", parent, name);
+     return yfs_client::OK;
+  }
+  printf("fusesever_createhelper parent %016lx filename %s\n, create FAIL!", parent, name);
+  return yfs_client::IOERR;
 }
 
 void
@@ -459,7 +470,7 @@ main(int argc, char *argv[])
   myid = random();
 
   yfs = new yfs_client(argv[2], argv[3]);
-
+  yfs->createroot();
   fuseserver_oper.getattr    = fuseserver_getattr;
   fuseserver_oper.statfs     = fuseserver_statfs;
   fuseserver_oper.readdir    = fuseserver_readdir;

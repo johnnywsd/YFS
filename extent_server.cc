@@ -95,6 +95,7 @@ int extent_server::remove(extent_protocol::extentid_t id, int &)
     printf("extent_server::remove find the key of %016llx \n", id);
     ext_obj = extent_storage[id];
     delete ext_obj;
+    extent_storage.erase(id);
     return extent_protocol::OK;
   }
   else

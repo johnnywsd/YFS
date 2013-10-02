@@ -11,6 +11,8 @@
 class yfs_client {
   extent_client *ec;
   lock_client *lcc;
+  static const char DELIMITER; 
+  static const char SUB_DELIMITER; 
  public:
 
   typedef unsigned long long inum;
@@ -36,6 +38,7 @@ class yfs_client {
  private:
   static std::string filename(inum);
   static inum n2i(std::string);
+  static inum generate_inum(bool is_file);
  public:
 
   yfs_client(std::string, std::string);
@@ -46,7 +49,9 @@ class yfs_client {
   int getfile(inum, fileinfo &);
   int getdir(inum, dirinfo &);
 
-  status lookup(inum inum_p, const char* name, inum inum_c);
+  status lookup(inum inum_p, const char* name, inum& inum_c);
+  status createfile(inum inum_p, const char* name, inum& inum_c);
+  status createroot();
 
 };
 #endif 
