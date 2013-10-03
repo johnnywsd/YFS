@@ -1,11 +1,13 @@
 #ifndef yfs_client_h
 #define yfs_client_h
+#define SIZE_MAX ((unsigned int)(-1))
 
 #include <string>
 //#include "yfs_protocol.h"
 #include "extent_client.h"
 #include "lock_client.h"
 #include <vector>
+//#include <climits>
 
 
 class yfs_client {
@@ -52,6 +54,11 @@ class yfs_client {
   status lookup(inum inum_p, const char* name, inum& inum_c);
   status createfile(inum inum_p, const char* name, inum& inum_c);
   status createroot();
+  status readdir(inum inum_p,std::vector<dirent>& dir_entries);
+  status setattr(inum inum, fileinfo& finfo);
+  status read(inum inu, off_t offset, size_t size, std::string& buf);
+  status write(inum inu, off_t offset, size_t size, const char* buf);
+
 
 };
 #endif 

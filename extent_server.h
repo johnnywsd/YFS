@@ -21,9 +21,10 @@ class extent_server {
     extent_storage_map extent_storage;
  public:
   extent_server();
+  ~extent_server();
 
-  int put(extent_protocol::extentid_t id, std::string, int &);
-  int get(extent_protocol::extentid_t id, std::string &);
+  int put(extent_protocol::extentid_t id, std::string, int offset, int& r);
+  int get(extent_protocol::extentid_t id, int offset, unsigned int size, std::string &);
   int getattr(extent_protocol::extentid_t id, extent_protocol::attr &);
   int remove(extent_protocol::extentid_t id, int &);
 };

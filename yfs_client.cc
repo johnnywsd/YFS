@@ -18,7 +18,6 @@ const char yfs_client::SUB_DELIMITER = ',';
 yfs_client::yfs_client(std::string extent_dst, std::string lock_dst)
 {
   ec = new extent_client(extent_dst);
-  //lcc = new lock_client(lock_dst);
 
 }
 
@@ -97,9 +96,11 @@ yfs_client::getdir(inum inum, dirinfo &din)
 }
 
 
+
 yfs_client::inum 
 yfs_client::generate_inum(bool is_file)
 {
+  printf("yfs_client::generate_inum\n");
   yfs_client::inum new_inum;
   long range = 0x7FFFFFFF;
   long rand_num = (rand() * range) / RAND_MAX;
@@ -116,8 +117,13 @@ yfs_client::status
 yfs_client::lookup(inum inum_p, const char* name, inum& inum_c)
 {
   std::string buf;
-  if( ec->get(inum_p, buf) == extent_protocol::OK ){
+  printf("yfs_client::lookup\n" );
+  extent_protocol::status flag_get = ec->get(inum_p,0,SIZE_MAX, buf) ;
+  printf("yfs_client::lookup, flag_get:%d\n", flag_get);
+  printf("yfs_client::lookup, buf: %s\n", buf.c_str());
+  if( flag_get == extent_protocol::OK ){
     //Parent Found
+    printf("yfs_client::lookup, parent %016lx, parent found\n", inum_p);
 	std::stringstream all_entry_str_stream(buf);
 	std::string entry_str;
 
@@ -133,28 +139,63 @@ yfs_client::lookup(inum inum_p, const char* name, inum& inum_c)
         std::getline(entry_str_stream, name_str,yfs_client::SUB_DELIMITER);
         if (target_name_str == name_str)
         {
-            printf("yfs_client::lookup %01611x parent directory found the filename %s \n", inum_p, target_name_str.c_str());
             inum_c = n2i(inum_str);
+            printf("yfs_client::lookup, parent: %016llx, name:%s, FILE FOUND\n", inum_p, name_str.c_str());
             return yfs_client::OK;
         }
 	}
-    printf("yfs_client::lookup %01611x parent directory NOT found the filename %s \n", inum_p, target_name_str.c_str());
+    printf("yfs_client::lookup %016lx parent directory NOT found the filename %s \n", inum_p, target_name_str.c_str());
     return yfs_client::NOENT;
 
   }else{
 
+    printf("yfs_client::lookup, parent %016lx , parent NOT found\n", inum_p);
     return yfs_client::NOENT;
   }
 }
 
 
+yfs_client::status 
+yfs_client::readdir(inum inum_p,std::vector<dirent>& dir_entries)
+{
+  printf("yfs_client::readdir\n");
+  std::string buf;
+  if( ec->get(inum_p, 0, SIZE_MAX, buf) == extent_protocol::OK ){
+    //Parent Found
+	std::stringstream all_entry_str_stream(buf);
+	std::string entry_str;
+
+    //segment : inum_str, name_str
+	while(std::getline(all_entry_str_stream, entry_str, yfs_client::DELIMITER))
+	{
+        dirent ent;
+        std::string inum_str;
+        std::string name_str;
+        std::stringstream entry_str_stream(entry_str);
+        std::getline(entry_str_stream, inum_str,yfs_client::SUB_DELIMITER);
+        std::getline(entry_str_stream, name_str,yfs_client::SUB_DELIMITER);
+        ent.name = name_str;
+        ent.inum = n2i(inum_str);
+        dir_entries.push_back(ent);
+        printf("yfs_client::readdir %016lx parent directory found the filename %s \n", inum_p, name_str.c_str());
+	}
+    printf("yfs_client::readdir %016lx parent directory read finished \n", inum_p); 
+    return yfs_client::OK;
+
+  }else{
+    //parent not found
+    return yfs_client::NOENT;
+  }
+}
+
 yfs_client::status
 yfs_client::createfile(inum inum_p, const char* name, inum& inum_c)
 { 
+  printf("yfs_cient::createfile\n");
   yfs_client::status ret = yfs_client::OK;
   std::string all_entry_str;
   //Check if this file already exists in inum_p 
-  if(ec->get(inum_p, all_entry_str) == extent_protocol::OK)
+  if(ec->get(inum_p,0, SIZE_MAX, all_entry_str) == extent_protocol::OK)
   {
     //Parent exists
     //all_entry_str: inum_str, name_str; inum_str, name_str
@@ -173,7 +214,8 @@ yfs_client::createfile(inum inum_p, const char* name, inum& inum_c)
         std::getline(entry_str_stream, name_str,yfs_client::SUB_DELIMITER);
         if (target_name_str == name_str)
         {
-            printf("yfs_client::createfile %01611x parent directory found the filename %s \n", inum_p, target_name_str.c_str());
+            printf("yfs_client::createfile %016lx parent directory found the filename %s \n", inum_p, target_name_str.c_str());
+            inum_c = n2i(inum_str);
             flag_file_found = true;
             break;
         }
@@ -183,32 +225,37 @@ yfs_client::createfile(inum inum_p, const char* name, inum& inum_c)
     if(flag_file_found == false)
     {
         //File does not exist, able to create new file.
-        inum new_inum = generate_inum(false); 
+        inum new_inum = generate_inum(true); 
+        inum_c = new_inum;
         all_entry_str.append(filename(new_inum)+ yfs_client::SUB_DELIMITER + std::string(name) + yfs_client::DELIMITER );
+        //printf("yfs_client::createfile::all_entry_str:%s\n",all_entry_str.c_str());
+        printf("yfs_client::createfile, new_inum: %016llx\n",new_inum);
 
         //add the new file
-        if( ec->put(new_inum, std::string(""))!= extent_protocol::OK)
+        if( ec->put(new_inum, std::string(""), 0)!= extent_protocol::OK)
         {
             printf("yfs_client::createfile IOERR 1 > ");
             return yfs_client::IOERR;
         }
         
         //change the parent folder info
-        if( ec->put(inum_p, all_entry_str)!= extent_protocol::OK)
+        if( ec->put(inum_p, all_entry_str, 0)!= extent_protocol::OK)
         {
             printf("yfs_client::createfile IOERR 2> ");
             return yfs_client::IOERR;
         }
+        return yfs_client::OK;
     }
     else
     {
-      printf("yfs_client::createfile %01611x parent directory exist, but file %s also exist > \n", inum_p, name);
+      printf("yfs_client::createfile %016lx parent directory exist, but file %s also exist > \n", inum_p, name);
+      return yfs_client::EXIST;
     }
   }
   else
   {
       //Parent directory does not exist.
-      printf("yfs_client::createfile %01611x parent directory does not exist \n", inum_p);
+      printf("yfs_client::createfile %016lx parent directory does not exist \n", inum_p);
       return yfs_client::NOENT;
   }
 }
@@ -216,14 +263,75 @@ yfs_client::createfile(inum inum_p, const char* name, inum& inum_c)
 yfs_client::status
 yfs_client::createroot()
 {
-    yfs_client::inum inum_root = 0x00000001;
+    printf("yfs_cient::createroot \n");
+    yfs_client::inum inum_root = 0x00000001 & 0x000000007FFFFFFF;
+    //printf("in createroot 1 \n");
     std::string all_entry_str = filename(inum_root) + SUB_DELIMITER + std::string("root") + DELIMITER;
-    if(ec->put(inum_root, all_entry_str) == extent_protocol::OK)
+    //printf("in createroot 2 \n");
+    extent_protocol::status flag = ec->put(inum_root, all_entry_str, 0);
+    //printf("in createroot 3 \n");
+
+    if(flag == extent_protocol::OK)
     {
+        printf("yfs_client::createroot succeed \n");
         return yfs_client::OK;
     }
     else
     {
+        printf("yfs_client::createroot failed \n");
         return yfs_client::IOERR;
     }
+}
+
+yfs_client::status 
+yfs_client::setattr(inum inum, fileinfo& finfo)
+{
+  int r = OK;
+  std::string file_buf;
+  printf("yfs_client::setattr %016llx, finfo.size %lld \n", inum, finfo.size);
+  if (ec->get(inum,0, SIZE_MAX, file_buf)!= extent_protocol::OK)
+  {
+      return yfs_client::IOERR;
+  }
+ 
+  unsigned long long new_size = finfo.size;
+  if (new_size <= 0) 
+     file_buf = "";
+  else {
+     file_buf.resize(new_size);
+  }
+
+  if (ec->put(inum,file_buf, new_size) != extent_protocol::OK) {
+    r = IOERR;
+    goto release;
+  }
+  
+  r = OK; 
+ 
+  release:
+   return r;
+}
+yfs_client::status
+yfs_client::read(inum inu, off_t offset, size_t size, std::string &buf)
+{
+   printf("yfs_client::read %016llx, off %ld size %u \n", inu, offset, size);
+   if (ec->get(inu, (int)offset, (unsigned int)size, buf) != extent_protocol::OK) {
+       return yfs_client::IOERR;
+   }
+   printf("yfs_client::read %016llx, off %ld size %u, buff:%s \n", inu, offset, size, buf.c_str());
+    
+   return yfs_client::OK;
+}
+
+yfs_client::status
+yfs_client::write(inum inu, off_t offset, size_t size, const char* buf)
+{
+   std::string buf_f;
+   printf("yfs_client::write %016llx off: %ld size: %u \n", inu, offset, size);   
+   buf_f.append(buf, (unsigned int)size);
+   if (ec->put(inu, buf_f, (int)offset) != extent_protocol::OK) {
+      return yfs_client::IOERR;
+   }
+
+   return yfs_client::OK;
 }
