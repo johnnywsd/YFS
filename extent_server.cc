@@ -29,12 +29,21 @@ int extent_server::put(extent_protocol::extentid_t id, std::string buf, int offs
       //found the file with id
       ext_obj = extent_storage[id];
       if(offset > ext_obj->data.size()){ 
+          ext_obj->data.resize(offset,'\0');
           ext_obj->data.append(buf);
       }
       else
       {
-          ext_obj->data.resize(offset);
-          ext_obj->data.append(buf);
+          //ext_obj->data.resize(offset);
+          //ext_obj->data.append(buf);
+          if( buf.empty())
+          {
+              ext_obj->data.resize(offset);
+          }
+          else
+          {
+              ext_obj->data.replace(offset,buf.size(),buf);
+          }
       }
       printf("extent_server::put find id \n");
   }
@@ -45,7 +54,7 @@ int extent_server::put(extent_protocol::extentid_t id, std::string buf, int offs
       extent_storage[id] = ext_obj;
       printf("extent_server::put not find id, create new,id:%016llx \n", id);
   }
-  ext_obj->data = buf;
+  //ext_obj->data = buf;
 
   ext_obj->file_attr.mtime = time(NULL);
   ext_obj->file_attr.ctime = time(NULL);

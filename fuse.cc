@@ -185,7 +185,7 @@ fuseserver_read(fuse_req_t req, fuse_ino_t ino, size_t size,
      fuse_reply_err(req, ENOSYS);
      return;
   }
-  printf("fuseserver_write, inum:%016llx, off:%ld, buf:%s", inu, off, buf.c_str());
+  printf("fuseserver_write, inum:%016llx, off:%ld,size:%lld, buf:%s\n", inu, off,size, buf.c_str());
   fuse_reply_buf(req, buf.data(), buf.size());
 #else
   fuse_reply_err(req, ENOSYS);
@@ -215,9 +215,9 @@ fuseserver_write(fuse_req_t req, fuse_ino_t ino,
   // You fill this in for Lab 2
 #if 1
   // Change the above line to "#if 1", and your code goes here
-  printf("fuseserver_write, inum:%016llx, off:%ld, buf:%s", inu, off, buf);
   yfs_client::inum inu = ino;
   yfs_client::status ret;
+  printf("fuseserver_write, inum:%016llx, off:%ld, size:%lld, buf:%s\n", inu, off,size, buf);
   if ((ret = yfs->write(inu, off, size, buf)) != yfs_client::OK) {
      fuse_reply_err(req, ENOSYS);
   }  

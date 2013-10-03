@@ -302,14 +302,10 @@ yfs_client::setattr(inum inum, fileinfo& finfo)
   }
 
   if (ec->put(inum,file_buf, new_size) != extent_protocol::OK) {
-    r = IOERR;
-    goto release;
+    return yfs_client::IOERR;
   }
   
-  r = OK; 
- 
-  release:
-   return r;
+  return yfs_client::OK; 
 }
 yfs_client::status
 yfs_client::read(inum inu, off_t offset, size_t size, std::string &buf)
@@ -327,8 +323,8 @@ yfs_client::status
 yfs_client::write(inum inu, off_t offset, size_t size, const char* buf)
 {
    std::string buf_f;
-   printf("yfs_client::write %016llx off: %ld size: %u \n", inu, offset, size);   
    buf_f.append(buf, (unsigned int)size);
+   printf("yfs_client::write %016llx off:%ld size:%u, buf:%s \n", inu, offset, size, buf_f.c_str());   
    if (ec->put(inu, buf_f, (int)offset) != extent_protocol::OK) {
       return yfs_client::IOERR;
    }
