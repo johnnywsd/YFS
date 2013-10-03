@@ -103,7 +103,8 @@ yfs_client::generate_inum(bool is_file)
   printf("yfs_client::generate_inum\n");
   yfs_client::inum new_inum;
   long range = 0x7FFFFFFF;
-  long rand_num = (rand() * range) / RAND_MAX;
+  long rand_num = (rand() * range) RAND_MAX;
+  //long rand_num = (rand() * range) / RAND_MAX;
   if (is_file) 
     new_inum = rand_num | 0x0000000080000000;
   else
@@ -310,11 +311,11 @@ yfs_client::setattr(inum inum, fileinfo& finfo)
 yfs_client::status
 yfs_client::read(inum inu, off_t offset, size_t size, std::string &buf)
 {
-   printf("yfs_client::read %016llx, off %ld size %u \n", inu, offset, size);
+   printf("yfs_client::read %016lx, off %ld size %u \n", inu, offset, size);
    if (ec->get(inu, (int)offset, (unsigned int)size, buf) != extent_protocol::OK) {
        return yfs_client::IOERR;
    }
-   printf("yfs_client::read %016llx, off %ld size %u, buff:%s \n", inu, offset, size, buf.c_str());
+   printf("yfs_client::read %016lx, off %ld size %u, buff:%s \n", inu, offset, size, buf.c_str());
     
    return yfs_client::OK;
 }
@@ -324,7 +325,7 @@ yfs_client::write(inum inu, off_t offset, size_t size, const char* buf)
 {
    std::string buf_f;
    buf_f.append(buf, (unsigned int)size);
-   printf("yfs_client::write %016llx off:%ld size:%u, buf:%s \n", inu, offset, size, buf_f.c_str());   
+   printf("yfs_client::write %016lx off:%ld size:%u, buf:%s \n", inu, offset, size, buf_f.c_str());   
    if (ec->put(inu, buf_f, (int)offset) != extent_protocol::OK) {
       return yfs_client::IOERR;
    }
