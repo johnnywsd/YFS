@@ -103,7 +103,7 @@ yfs_client::generate_inum(bool is_file)
   printf("yfs_client::generate_inum\n");
   yfs_client::inum new_inum;
   long range = 0x7FFFFFFF;
-  long rand_num = (rand() * range) RAND_MAX;
+  long rand_num = (rand() * range);
   //long rand_num = (rand() * range) / RAND_MAX;
   if (is_file) 
     new_inum = rand_num | 0x0000000080000000;
