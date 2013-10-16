@@ -57,6 +57,8 @@ int
 yfs_client::getfile(inum inum, fileinfo &fin)
 {
   int r = OK;
+  // You modify this function for Lab 3
+  // - hold and release the file lock
 
   printf("getfile %016llx\n", inum);
   extent_protocol::attr a;
@@ -80,6 +82,8 @@ int
 yfs_client::getdir(inum inum, dirinfo &din)
 {
   int r = OK;
+  // You modify this function for Lab 3
+  // - hold and release the directory lock
 
   printf("getdir %016llx\n", inum);
   extent_protocol::attr a;
