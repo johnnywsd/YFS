@@ -218,7 +218,7 @@ fuseserver_write(fuse_req_t req, fuse_ino_t ino,
   yfs_client::inum inu = ino;
   yfs_client::status ret;
   printf("fuseserver_write, inum:%016llx, off:%ld, size:%lld, buf:%s\n", inu, off,size, buf);
-  if ((ret = yfs->write(inu, off, size, buf)) != yfs_client::OK) {
+  if ((ret = yfs->write(inu, (int)off, (unsigned int)size, buf)) != yfs_client::OK) {
      fuse_reply_err(req, ENOSYS);
   }  
   fuse_reply_write(req, size);
