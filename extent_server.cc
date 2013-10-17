@@ -26,13 +26,28 @@ int extent_server::put(extent_protocol::extentid_t id, std::string buf, int offs
   extent_struct* ext_obj; 
   if(this->extent_storage.find(id) != extent_storage.end())
   {
+      //printf("extent_server::put offset=%d, buf:%s\n", offset, buf.c_str());
       //found the file with id
       ext_obj = extent_storage[id];
-      if(offset > ext_obj->data.size()){ 
+      //printf("extent_server::put offset=%d, id:%016llx, ext_obj->data:%s, buf:%s\n", offset, id, ext_obj->data.c_str(), buf.c_str());
+      //printf("extent_server::put offset=%d, id:%016llx, ext_obj->data:%s,ext_obj->data.size():%d, buf:%s\n",
+              //offset, id, ext_obj->data.c_str(),ext_obj->data.size(), buf.c_str());
+      int data_size = ext_obj->data.size();
+      if(offset > data_size){ 
+          //printf("extent_server::put offset=%d, buf:%s, offset > data.size\n", offset, buf.c_str());
           ext_obj->data.resize(offset,'\0');
           ext_obj->data.append(buf);
       }
-      else
+      else if (offset < 0)
+      {
+          //ext_obj->data.resize(0);
+          printf("extent_server::put offset<1, test printf ");
+          //printf("extent_server::put offset<1, buf:%s\n", buf.c_str());
+          ext_obj->data = buf;
+          //printf("extent_server::put offset<1, buf:%s\n SUCCEED", buf.c_str());
+
+      }
+      else 
       {
           //ext_obj->data.resize(offset);
           //ext_obj->data.append(buf);
@@ -119,6 +134,7 @@ int extent_server::getattr(extent_protocol::extentid_t id, extent_protocol::attr
     a.ctime = 0;
   }
   
+  printf("extent_server::getattr Release, Return OK %016lx \n", id);
   return extent_protocol::OK;
 }
 

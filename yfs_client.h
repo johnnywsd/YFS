@@ -43,6 +43,7 @@ class yfs_client {
   static std::string filename(inum);
   static inum n2i(std::string);
   static inum generate_inum(bool is_file);
+  status createfile_helper(inum inum_p, const char* name, inum& inum_c, bool isfile);
  public:
 
   yfs_client(std::string, std::string);
@@ -61,6 +62,9 @@ class yfs_client {
   status read(inum inu, off_t offset, size_t size, std::string& buf);
   status write(inum inu, off_t offset, size_t size, const char* buf);
 
+  status mkdir(inum inum_p, const char* name, inum &inum_c);
+  status createfile(inum inum_p, const char* name, inum &inum_c, bool is_file);
+  status unlink(inum inum_p, const char* name);
 
 };
 #endif 

@@ -57,7 +57,7 @@ getattr(yfs_client::inum inum, struct stat &st)
      st.st_mtime = info.mtime;
      st.st_ctime = info.ctime;
      st.st_size = info.size;
-     printf("   getattr -> %llu\n, is_file", info.size);
+     printf("   getattr -> %llu, is_file \n", info.size);
    } else {
      yfs_client::dirinfo info;
      ret = yfs->getdir(inum, info);
@@ -70,6 +70,8 @@ getattr(yfs_client::inum inum, struct stat &st)
      st.st_ctime = info.ctime;
      printf("   getattr -> %lu %lu %lu, it's dir\n", info.atime, info.mtime, info.ctime);
    }
+
+   printf("getattr %016llx %d RETURN OK\n", inum, yfs->isfile(inum));
    return yfs_client::OK;
 }
 
@@ -260,11 +262,19 @@ fuseserver_createhelper(fuse_ino_t parent, const char *name,
   // I have already done. Shouda.
   yfs_client::inum inum_p = parent;
   yfs_client::inum inum_c;
-  if (yfs->createfile(inum_p, name, inum_c) == yfs_client::OK) {
+  ret = yfs->createfile(inum_p, name, inum_c); 
+  printf("fusesever_createhelper yfs->createfile, parent: %016llx, filename %s, inum_c:%016llx, RETURN %d\n",
+          parent, name, inum_c, ret);
+  if (ret == yfs_client::OK) {
      struct stat st;
      e->ino = inum_c;
-     if(getattr(inum_c, st) == yfs_client::OK)
-     e->attr = st;
+     printf("fusesever_createhelper before yfs->getattr, parent: %016llx, filename %s, inum_c:%016llx \n",
+          parent, name, inum_c);
+     ret = getattr(inum_c, st);
+     printf("fusesever_createhelper yfs->getattr, parent: %016llx, filename %s, inum_c:%016llx, RETURN %d\n",
+          parent, name, inum_c, ret);
+     if(ret == yfs_client::OK)
+         e->attr = st;
      printf("fusesever_createhelper parent %016llx filename %s, created succeed!\n", parent, name);
      return yfs_client::OK;
   }
@@ -447,8 +457,39 @@ fuseserver_mkdir(fuse_req_t req, fuse_ino_t parent, const char *name,
   (void) e;
 
   // You fill this in for Lab 3
-#if 0
-  fuse_reply_entry(req, &e);
+#if 1
+  
+  yfs_client::inum inum_p = parent; // req->in.h.nodeid;
+  yfs_client::inum inum_c = 0; 
+  yfs_client::status ret;
+  printf("fuseserver_mkdir parent:%016lx name:%s, start \n", parent, name); 
+  ret = yfs->mkdir(inum_p, name, inum_c);
+  printf("fuseserver_mkdir parent:%016lx name:%s, yfs->mkdir pass \n", parent, name); 
+  if (ret == yfs_client::OK) {
+      printf("fuseserver_mkdir parent:%016lx name:%s, inum_c:%016lx  , yfs->mkdir pass, return  OK \n", parent, name,inum_c); 
+    struct stat st;
+    e.ino = inum_c;
+    ret = getattr(inum_c, st);
+    if(ret == yfs_client::OK)
+    {
+      printf("fuseserver_mkdir getattr,inum_c:%016lx , return  OK \n", inum_c); 
+      e.attr = st;
+      fuse_reply_entry(req, &e);
+    }
+    else
+    {
+        printf("fuseserver_mkdir getattr,inum_c:%016lx , return %d \n", inum_c, ret); 
+        fuse_reply_err(req, ENOSYS);
+    }
+  }
+  if (ret == yfs_client::EXIST)
+  {
+    fuse_reply_err(req, EEXIST);
+  }
+  else
+  {
+    fuse_reply_err(req, ENOENT);
+  }
 #else
   fuse_reply_err(req, ENOSYS);
 #endif
@@ -468,7 +509,24 @@ fuseserver_unlink(fuse_req_t req, fuse_ino_t parent, const char *name)
   // You fill this in for Lab 3
   // Success:	fuse_reply_err(req, 0);
   // Not found:	fuse_reply_err(req, ENOENT);
-  fuse_reply_err(req, ENOSYS);
+  printf("fuseserver_unlink parent:%016lx name:%s, start \n", parent, name); 
+  yfs_client::status ret;
+  yfs_client::inum inum_p = parent;
+  ret = yfs->unlink(inum_p, name);
+  printf("fuseserver_unlink parent:%016lx name:%s, RETURN %d \n", parent, name, ret); 
+
+  if(ret == yfs_client::OK)
+  {
+      fuse_reply_err(req, 0);
+  }
+  else if(ret == yfs_client::NOENT)
+  {
+      fuse_reply_err(req, yfs_client::NOENT);
+  }
+  else
+  {
+      fuse_reply_err(req, ENOSYS);
+  }
 }
 
 void
