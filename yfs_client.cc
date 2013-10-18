@@ -222,11 +222,11 @@ yfs_client::createfile_helper(inum inum_p, const char* name, inum& inum_c, bool 
         std::stringstream entry_str_stream(entry_str);
         std::getline(entry_str_stream, inum_str,yfs_client::SUB_DELIMITER);
         std::getline(entry_str_stream, name_str,yfs_client::SUB_DELIMITER);
-        printf("yfs_client::createfile_helper, while loop, parent:%016lx, Checking: inum:%016lx, inum_str:%s,filename:%s,target_name_str:%s \n",
+        printf("yfs_client::createfile_helper, while loop, parent:%016llx, Checking: inum:%016llx, inum_str:%s,filename:%s,target_name_str:%s \n",
                 inum_p, n2i(inum_str), inum_str.c_str(),name_str.c_str(), target_name_str.c_str());
         if (target_name_str == name_str)
         {
-            printf("yfs_client::createfile_helper while loop, FOUND, %016lx parent directory found the filename %s \n", inum_p, target_name_str.c_str());
+            printf("yfs_client::createfile_helper while loop, FOUND, %016llx parent directory found the filename %s \n", inum_p, target_name_str.c_str());
             inum_c = n2i(inum_str);
             flag_file_found = true;
             break;
@@ -271,14 +271,14 @@ yfs_client::createfile_helper(inum inum_p, const char* name, inum& inum_c, bool 
     }
     else
     {
-      printf("yfs_client::createfile_helper %016lx parent directory exist, but file %s also exist > \n", inum_p, name);
+      //printf("yfs_client::createfile_helper %016lx parent directory exist, but file %s also exist > \n", inum_p, name);
       return yfs_client::EXIST;
     }
   }
   else
   {
       //Parent directory does not exist.
-      printf("yfs_client::createfile_helper %016lx parent directory does not exist \n", inum_p);
+      //printf("yfs_client::createfile_helper %016lx parent directory does not exist \n", inum_p);
       return yfs_client::NOENT;
   }
 }

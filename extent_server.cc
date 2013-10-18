@@ -32,7 +32,7 @@ int extent_server::put(extent_protocol::extentid_t id, std::string buf, int offs
       //printf("extent_server::put offset=%d, id:%016llx, ext_obj->data:%s, buf:%s\n", offset, id, ext_obj->data.c_str(), buf.c_str());
       //printf("extent_server::put offset=%d, id:%016llx, ext_obj->data:%s,ext_obj->data.size():%d, buf:%s\n",
               //offset, id, ext_obj->data.c_str(),ext_obj->data.size(), buf.c_str());
-      int data_size = ext_obj->data.size();
+      int data_size = (int) (ext_obj->data.size());
       if(offset > data_size){ 
           //printf("extent_server::put offset=%d, buf:%s, offset > data.size\n", offset, buf.c_str());
           ext_obj->data.resize(offset,'\0');
