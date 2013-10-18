@@ -304,9 +304,9 @@ yfs_client::createfile(inum inum_p, const char* name, inum& inum_c, bool is_file
 yfs_client::status
 yfs_client::mkdir(inum inum_p, const char* name, inum &inum_c)
 {
-   printf("yfs_client::mkdir inum_p:%016lx, inum_c:%016lx, name:%s\n", inum_p, inum_c, name);
+   printf("yfs_client::mkdir inum_p:%016llx, inum_c:%016llx, name:%s\n", inum_p, inum_c, name);
    yfs_client::status ret =  createfile_helper(inum_p, name, inum_c, false);
-   printf("yfs_client::mkdir pass! inum_p:%016lx, inum_c:%016lx, name:%s\n", inum_p, inum_c, name);
+   printf("yfs_client::mkdir pass! inum_p:%016llx, inum_c:%016llx, name:%s\n", inum_p, inum_c, name);
    return ret;
 
 }
