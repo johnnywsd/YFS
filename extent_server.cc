@@ -67,7 +67,7 @@ int extent_server::put(extent_protocol::extentid_t id, std::string buf, int offs
       //NOT found the file with id
       ext_obj = new extent_struct();
       extent_storage[id] = ext_obj;
-      printf("extent_server::put not find id, create new,id:%016llx \n", id);
+      //printf("extent_server::put not find id, create new,id:%016llx \n", id);
   }
   //ext_obj->data = buf;
 
@@ -99,13 +99,13 @@ int extent_server::get(extent_protocol::extentid_t id, int offset, unsigned int 
       {
         buf = "\0";
       }
-      printf("extent_server::get found the file of %016lx data: %s\n", id, buf.c_str());
+      //printf("extent_server::get found the file of %016lx data: %s\n", id, buf.c_str());
       return extent_protocol::OK;
   }
   else
   {
       //NOT found the file with id
-      printf("extent_server::get NOT found the file of %016lx \n", id);
+      //printf("extent_server::get NOT found the file of %016lx \n", id);
       return extent_protocol::NOENT;
   }
   //return extent_protocol::IOERR;
@@ -120,7 +120,7 @@ int extent_server::getattr(extent_protocol::extentid_t id, extent_protocol::attr
   ScopedLock ml(&ext_mutex);
   extent_struct* ext_obj;
   if (this->extent_storage.find(id) != extent_storage.end()){
-    printf("extent_server::getattr find the key of %016lx \n", id);
+    //printf("extent_server::getattr find the key of %016lx \n", id);
     ext_obj = extent_storage[id];
     a.size = ext_obj->file_attr.size;
     a.atime = ext_obj->file_attr.atime;
@@ -134,7 +134,7 @@ int extent_server::getattr(extent_protocol::extentid_t id, extent_protocol::attr
     a.ctime = 0;
   }
   
-  printf("extent_server::getattr Release, Return OK %016lx \n", id);
+  //printf("extent_server::getattr Release, Return OK %016lx \n", id);
   return extent_protocol::OK;
 }
 
@@ -144,7 +144,7 @@ int extent_server::remove(extent_protocol::extentid_t id, int &)
   ScopedLock ml(&ext_mutex);
   extent_struct* ext_obj;
   if (this->extent_storage.find(id) != extent_storage.end()){
-    printf("extent_server::remove find the key of %016lx \n", id);
+    //printf("extent_server::remove find the key of %016lx \n", id);
     ext_obj = extent_storage[id];
     delete ext_obj;
     extent_storage.erase(id);
