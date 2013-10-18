@@ -217,16 +217,17 @@ yfs_client::createfile_helper(inum inum_p, const char* name, inum& inum_c, bool 
     std::string target_name_str(name);
 	while(std::getline(all_entry_str_stream, entry_str, yfs_client::DELIMITER))
 	{
+        printf("yfs_client::createfile_helper, while loop\n");
         std::string inum_str;
         std::string name_str;
         std::stringstream entry_str_stream(entry_str);
         std::getline(entry_str_stream, inum_str,yfs_client::SUB_DELIMITER);
         std::getline(entry_str_stream, name_str,yfs_client::SUB_DELIMITER);
-        printf("yfs_client::createfile_helper, while loop, parent:%016llx, Checking: inum:%016llx, inum_str:%s,filename:%s,target_name_str:%s \n",
-                inum_p, n2i(inum_str), inum_str.c_str(),name_str.c_str(), target_name_str.c_str());
+        //printf("yfs_client::createfile_helper, while loop, parent:%016llx, Checking: inum:%016llx, inum_str:%s,filename:%s,target_name_str:%s \n",
+                //inum_p, n2i(inum_str), inum_str.c_str(),name_str.c_str(), target_name_str.c_str());
         if (target_name_str == name_str)
         {
-            printf("yfs_client::createfile_helper while loop, FOUND, %016llx parent directory found the filename %s \n", inum_p, target_name_str.c_str());
+            //printf("yfs_client::createfile_helper while loop, FOUND, %016llx parent directory found the filename %s \n", inum_p, target_name_str.c_str());
             inum_c = n2i(inum_str);
             flag_file_found = true;
             break;
