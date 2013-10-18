@@ -263,22 +263,22 @@ fuseserver_createhelper(fuse_ino_t parent, const char *name,
   yfs_client::inum inum_p = parent;
   yfs_client::inum inum_c;
   ret = yfs->createfile(inum_p, name, inum_c); 
-  printf("fusesever_createhelper yfs->createfile, parent: %016llx, filename %s, inum_c:%016llx, RETURN %d\n",
+  printf("fusesever_createhelper yfs->createfile, parent: %016lx, filename %s, inum_c:%016llx, RETURN %d\n",
           parent, name, inum_c, ret);
   if (ret == yfs_client::OK) {
      struct stat st;
      e->ino = inum_c;
-     printf("fusesever_createhelper before yfs->getattr, parent: %016llx, filename %s, inum_c:%016llx \n",
+     printf("fusesever_createhelper before yfs->getattr, parent: %016lx, filename %s, inum_c:%016llx \n",
           parent, name, inum_c);
      ret = getattr(inum_c, st);
-     printf("fusesever_createhelper yfs->getattr, parent: %016llx, filename %s, inum_c:%016llx, RETURN %d\n",
+     printf("fusesever_createhelper yfs->getattr, parent: %016lx, filename %s, inum_c:%016llx, RETURN %d\n",
           parent, name, inum_c, ret);
      if(ret == yfs_client::OK)
          e->attr = st;
-     printf("fusesever_createhelper parent %016llx filename %s, created succeed!\n", parent, name);
+     printf("fusesever_createhelper parent %016lx filename %s, created succeed!\n", parent, name);
      return yfs_client::OK;
   }
-  printf("fusesever_createhelper parent %016llx filename %s, create FAIL!\n", parent, name);
+  printf("fusesever_createhelper parent %016lx filename %s, create FAIL!\n", parent, name);
   return yfs_client::IOERR;
 }
 
