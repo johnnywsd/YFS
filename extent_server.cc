@@ -85,12 +85,19 @@ int extent_server::get(extent_protocol::extentid_t id, int offset, unsigned int 
   // You fill this in for Lab 2.
   ScopedLock ml(&ext_mutex);
   extent_struct* ext_obj; 
+  int file_attr_size = 0;
   if(this->extent_storage.find(id) != extent_storage.end())
   {
       //found the file with id
       ext_obj = extent_storage[id];
       ext_obj->file_attr.atime = time(NULL);
-      if(offset <= ext_obj->file_attr.size && offset>=0)
+      file_attr_size = (int)ext_obj->file_attr.size;
+      //if(offset <= ext_obj->file_attr.size && offset>=0)
+      //{
+        //buf = ext_obj->data;
+        //buf = buf.substr(offset,size);
+      //}
+      if(offset <= file_attr_size && offset >= 0)
       {
         buf = ext_obj->data;
         buf = buf.substr(offset,size);

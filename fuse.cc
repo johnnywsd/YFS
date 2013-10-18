@@ -473,7 +473,7 @@ fuseserver_mkdir(fuse_req_t req, fuse_ino_t parent, const char *name,
     ret = getattr(inum_c, st);
     if(ret == yfs_client::OK)
     {
-      printf("fuseserver_mkdir getattr,inum_c:%016lx , return  OK \n", inum_c); 
+      printf("fuseserver_mkdir getattr,inum_c:%016llx , return  OK \n", inum_c); 
       e.attr = st;
       fuse_reply_entry(req, &e);
     }

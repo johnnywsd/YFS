@@ -443,16 +443,30 @@ release:
   lc->release(inum);
   return r;
 }
+
+
 yfs_client::status
 yfs_client::read(inum inu, off_t offset, size_t size, std::string &buf)
 {
-   printf("yfs_client::read %016llx, off %d size %ld \n", inu, (int)offset, (long)size);
-   if (ec->get(inu, (int)offset, (unsigned int)size, buf) != extent_protocol::OK) {
-       return yfs_client::IOERR;
+   lc->acquire(inu);
+   yfs_client::status r;
+   printf("yfs_client::read %016llx, off %d size %ld \n",
+           inu, (int)offset, (long)size);
+   if (ec->get(inu, (int)offset, (unsigned int)size, buf) != extent_protocol::OK)
+   {
+       //return yfs_client::IOERR;
+       r = yfs_client::IOERR;
+       goto release;
    }
-   printf("yfs_client::read %016llx, off %d size %ld, buff:%s \n", inu, (int)offset, (long)size, buf.c_str());
+   printf("yfs_client::read %016llx, off %d size %ld, buff:%s \n",
+           inu, (int)offset, (long)size, buf.c_str());
     
-   return yfs_client::OK;
+   //return yfs_client::OK;
+   r = yfs_client::OK;
+   goto release;
+release:
+   lc->release(inu);
+   return r;
 }
 
 yfs_client::status
