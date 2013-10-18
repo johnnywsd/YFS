@@ -336,9 +336,9 @@ fuseserver_lookup(fuse_req_t req, fuse_ino_t parent, const char *name)
   yfs_client::inum inum_p = parent; // req->in.h.nodeid;
   yfs_client::inum inum_c; 
   yfs_client::status ret;
-  //printf("fuseserver_lookup parent:%016lx name:%s, start \n", parent, name); 
+  //printf("fuseserver_lookup parent:%016llx name:%s, start \n", parent, name); 
   ret = yfs->lookup(inum_p, name, inum_c);
-  //printf("fuseserver_lookup parent:%016lx name:%s, yfs->lookup pass \n", parent, name); 
+  //printf("fuseserver_lookup parent:%016llx name:%s, yfs->lookup pass \n", parent, name); 
   if (ret == yfs_client::OK) {
     struct stat st;
     e.ino = inum_c;

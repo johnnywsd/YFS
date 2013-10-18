@@ -131,7 +131,7 @@ yfs_client::lookup(inum inum_p, const char* name, inum& inum_c)
   printf("yfs_client::lookup, buf: %s\n", buf.c_str());
   if( flag_get == extent_protocol::OK ){
     //Parent Found
-    printf("yfs_client::lookup, parent %016lx, parent found\n", inum_p);
+    printf("yfs_client::lookup, parent %016llx, parent found\n", inum_p);
 	std::stringstream all_entry_str_stream(buf);
 	std::string entry_str;
 
@@ -152,12 +152,12 @@ yfs_client::lookup(inum inum_p, const char* name, inum& inum_c)
             return yfs_client::OK;
         }
 	}
-    printf("yfs_client::lookup %016lx parent directory NOT found the filename %s \n", inum_p, target_name_str.c_str());
+    printf("yfs_client::lookup %016llx parent directory NOT found the filename %s \n", inum_p, target_name_str.c_str());
     return yfs_client::NOENT;
 
   }else{
 
-    printf("yfs_client::lookup, parent %016lx , parent NOT found\n", inum_p);
+    printf("yfs_client::lookup, parent %016llx , parent NOT found\n", inum_p);
     return yfs_client::NOENT;
   }
 }
@@ -185,9 +185,9 @@ yfs_client::readdir(inum inum_p,std::vector<dirent>& dir_entries)
         ent.name = name_str;
         ent.inum = n2i(inum_str);
         dir_entries.push_back(ent);
-        printf("yfs_client::readdir %016lx parent directory found the filename %s \n", inum_p, name_str.c_str());
+        printf("yfs_client::readdir %016llx parent directory found the filename %s \n", inum_p, name_str.c_str());
 	}
-    printf("yfs_client::readdir %016lx parent directory read finished \n", inum_p); 
+    printf("yfs_client::readdir %016llx parent directory read finished \n", inum_p); 
     return yfs_client::OK;
 
   }else{
@@ -212,7 +212,7 @@ yfs_client::createfile_helper(inum inum_p, const char* name, inum& inum_c, bool 
     bool flag_file_found = false;
     std::stringstream all_entry_str_stream(all_entry_str);
 	std::string entry_str;
-    printf("yfs_client::createfile_helper, parent:%016lx directory's all_entry_str: %s \n", inum_p, all_entry_str.c_str());
+    printf("yfs_client::createfile_helper, parent:%016llx directory's all_entry_str: %s \n", inum_p, all_entry_str.c_str());
 
     std::string target_name_str(name);
 	while(std::getline(all_entry_str_stream, entry_str, yfs_client::DELIMITER))
@@ -271,14 +271,14 @@ yfs_client::createfile_helper(inum inum_p, const char* name, inum& inum_c, bool 
     }
     else
     {
-      //printf("yfs_client::createfile_helper %016lx parent directory exist, but file %s also exist > \n", inum_p, name);
+      //printf("yfs_client::createfile_helper %016llx parent directory exist, but file %s also exist > \n", inum_p, name);
       return yfs_client::EXIST;
     }
   }
   else
   {
       //Parent directory does not exist.
-      //printf("yfs_client::createfile_helper %016lx parent directory does not exist \n", inum_p);
+      //printf("yfs_client::createfile_helper %016llx parent directory does not exist \n", inum_p);
       return yfs_client::NOENT;
   }
 }
@@ -362,11 +362,11 @@ yfs_client::setattr(inum inum, fileinfo& finfo)
 yfs_client::status
 yfs_client::read(inum inu, off_t offset, size_t size, std::string &buf)
 {
-   printf("yfs_client::read %016lx, off %ld size %u \n", inu, offset, size);
+   printf("yfs_client::read %016llx, off %ld size %u \n", inu, offset, size);
    if (ec->get(inu, (int)offset, (unsigned int)size, buf) != extent_protocol::OK) {
        return yfs_client::IOERR;
    }
-   printf("yfs_client::read %016lx, off %ld size %u, buff:%s \n", inu, offset, size, buf.c_str());
+   printf("yfs_client::read %016llx, off %ld size %u, buff:%s \n", inu, offset, size, buf.c_str());
     
    return yfs_client::OK;
 }
@@ -376,7 +376,7 @@ yfs_client::write(inum inu, off_t offset, size_t size, const char* buf)
 {
    std::string buf_f;
    buf_f.append(buf, (unsigned int)size);
-   printf("yfs_client::write %016lx off:%ld size:%u, buf:%s \n", inu, offset, size, buf_f.c_str());   
+   printf("yfs_client::write %016llx off:%ld size:%u, buf:%s \n", inu, offset, size, buf_f.c_str());   
    if (ec->put(inu, buf_f, (int)offset) != extent_protocol::OK) {
       return yfs_client::IOERR;
    }
