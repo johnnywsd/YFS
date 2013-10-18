@@ -363,11 +363,11 @@ yfs_client::setattr(inum inum, fileinfo& finfo)
 yfs_client::status
 yfs_client::read(inum inu, off_t offset, size_t size, std::string &buf)
 {
-   printf("yfs_client::read %016llx, off %ld size %u \n", inu, offset, size);
+   printf("yfs_client::read %016llx, off %d size %ld \n", inu, (int)offset, (long)size);
    if (ec->get(inu, (int)offset, (unsigned int)size, buf) != extent_protocol::OK) {
        return yfs_client::IOERR;
    }
-   printf("yfs_client::read %016llx, off %ld size %u, buff:%s \n", inu, offset, size, buf.c_str());
+   printf("yfs_client::read %016llx, off %d size %ld, buff:%s \n", inu, (int)offset, (long)size, buf.c_str());
     
    return yfs_client::OK;
 }
