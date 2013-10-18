@@ -53,13 +53,17 @@ lock_server::stat(int clt, lock_protocol::lockid_t lid, int &r)
 lock_protocol::status
 lock_server::acquire(int clt, lock_protocol::lockid_t lid, int &r){
 
+    printf("lock_server::acquire very begining, lid:%016llx\n", lid);
 	pthread_mutex_lock(&mutex_acquire);
+    printf("lock_server::acquire after pthread_mutex_lock, lid:%016llx\n", lid);
 	lock_protocol::status ret = 0;
 	std::map<lock_protocol::lockid_t, int>::iterator flag= lock_map.find(lid);
 	// std::map<lock_protocol::lockid_t, pthread_cond_t*>::iterator flag_cond = cond_map.find(lid);
 
     if(flag != lock_map.end())
-    {	//Found
+    {	
+        printf("lock_server::acquire FOUND in lock_map, lid:%016llx\n", lid);
+        //Found
     	pthread_cond_t* p_cond = cond_map[lid];
     	pthread_cond_wait(p_cond, &mutex_lock_map);
     	// ret = lock_protocol::RETRY;
@@ -71,6 +75,7 @@ lock_server::acquire(int clt, lock_protocol::lockid_t lid, int &r){
     }
     else
     {
+        printf("lock_server::acquire NOT FOUND in lock_map, lid:%016llx\n", lid);
     	pthread_mutex_lock(&mutex_lock_map);
 
     	pthread_cond_t* p_cond = new pthread_cond_t();

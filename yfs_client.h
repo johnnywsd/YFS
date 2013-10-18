@@ -14,7 +14,7 @@
 
 class yfs_client {
   extent_client *ec;
-  lock_client *lcc;
+  lock_client *lc;
   static const char DELIMITER; 
   static const char SUB_DELIMITER; 
  public:
@@ -43,6 +43,7 @@ class yfs_client {
   static std::string filename(inum);
   static inum n2i(std::string);
   static inum generate_inum(bool is_file);
+  static inum generate_inum(bool is_file, inum inum_p);
   status createfile_helper(inum inum_p, const char* name, inum& inum_c, bool isfile);
  public:
 
