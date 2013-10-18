@@ -466,7 +466,7 @@ fuseserver_mkdir(fuse_req_t req, fuse_ino_t parent, const char *name,
   ret = yfs->mkdir(inum_p, name, inum_c);
   printf("fuseserver_mkdir parent:%016lx name:%s, yfs->mkdir pass \n", parent, name); 
   if (ret == yfs_client::OK) {
-      printf("fuseserver_mkdir parent:%016lx name:%s, inum_c:%016lx  , yfs->mkdir pass, return  OK \n", parent, name,inum_c); 
+      printf("fuseserver_mkdir parent:%016lx name:%s, inum_c:%016llx  , yfs->mkdir pass, return  OK \n", parent, name,inum_c); 
     struct stat st;
     e.ino = inum_c;
     ret = getattr(inum_c, st);
@@ -478,7 +478,7 @@ fuseserver_mkdir(fuse_req_t req, fuse_ino_t parent, const char *name,
     }
     else
     {
-        printf("fuseserver_mkdir getattr,inum_c:%016lx , return %d \n", inum_c, ret); 
+        printf("fuseserver_mkdir getattr,inum_c:%016llx , return %d \n", inum_c, ret); 
         fuse_reply_err(req, ENOSYS);
     }
   }
