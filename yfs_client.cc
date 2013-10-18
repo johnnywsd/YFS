@@ -377,7 +377,8 @@ yfs_client::write(inum inu, off_t offset, size_t size, const char* buf)
 {
    std::string buf_f;
    buf_f.append(buf, (unsigned int)size);
-   printf("yfs_client::write %016llx off:%ld size:%u, buf:%s \n", inu, offset, size, buf_f.c_str());   
+   printf("yfs_client::write %016llx off:%d size:%ld, buf:%s \n", inu, (int)offset, (long)size, buf_f.c_str());   
+   //printf("yfs_client::write %016llx off:%ld size:%u, buf:%s \n", inu, offset, size, buf_f.c_str());   
    if (ec->put(inu, buf_f, (int)offset) != extent_protocol::OK) {
       return yfs_client::IOERR;
    }
