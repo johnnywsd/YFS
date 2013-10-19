@@ -278,9 +278,12 @@ fuseserver_createhelper(fuse_ino_t parent, const char *name,
           parent, name, inum_c, ret);
      if(ret == yfs_client::OK)
          e->attr = st;
-     printf("fusesever_createhelper parent %016lx filename %s, created succeed!\n", parent, name);
+     printf("fusesever_createhelper parent %016lx filename %s,inum_c:%016llx, create SUCCEED!, RETURN %d\n", parent, name, inum_c, r);
   }
-  printf("fusesever_createhelper parent %016lx filename %s,inum_c:%016llx, create FAIL!, RETURN %d\n", parent, name, inum_c, r);
+  else
+  {
+    printf("fusesever_createhelper parent %016lx filename %s,inum_c:%016llx, create FAIL!, RETURN %d\n", parent, name, inum_c, r);
+  }
   return r;
 }
 

@@ -251,6 +251,7 @@ release:
 yfs_client::status
 yfs_client::createfile_helper(inum inum_p, const char* name, inum& inum_c, bool is_file)
 { 
+  lc->acquire(inum_p);
   yfs_client::status r;
   bool flag_file_found = false;
   bool child_lock = false;
@@ -363,49 +364,50 @@ release:
       lc->release(inum_c);
       printf("yfs_client::createfile_helper, released! inum_c: %016llx\n, name:%s",inum_c, name);
   }
+  lc->release(inum_p);
   return r;
 }
 
 yfs_client::status
 yfs_client::createfile(inum inum_p, const char* name, inum &inum_c)
 {
-    lc->acquire(inum_p);
-    printf("yfs_cient::createfile, acquired! inum_p:%016llx\n, name:%s", inum_p, name);
+    //lc->acquire(inum_p);
+    //printf("yfs_cient::createfile, acquired! inum_p:%016llx\n, name:%s", inum_p, name);
     printf("yfs_cient::createfile\n");
     yfs_client::status ret =  createfile_helper(inum_p, name, inum_c, true);
     printf("yfs_client::createfile pass\n");
 
-    lc->release(inum_p);
-    printf("yfs_cient::createfile, released! inum_p:%016llx\n, name:%s", inum_p, name);
+    //lc->release(inum_p);
+    //printf("yfs_cient::createfile, released! inum_p:%016llx\n, name:%s", inum_p, name);
     return ret;
 }
 
 yfs_client::status
 yfs_client::createfile(inum inum_p, const char* name, inum &inum_c, bool is_file)
 {
-    lc->acquire(inum_p);
-    printf("yfs_cient::createfile, acquired! inum_p:%016llx\n, name:%s", inum_p, name);
+    //lc->acquire(inum_p);
+    //printf("yfs_cient::createfile, acquired! inum_p:%016llx\n, name:%s", inum_p, name);
     printf("yfs_cient::createfile\n");
     yfs_client::status ret =  createfile_helper(inum_p, name, inum_c, is_file);
     printf("yfs_client::createfile pass\n");
 
-    lc->release(inum_p);
-    printf("yfs_cient::createfile, released! inum_p:%016llx\n, name:%s", inum_p, name);
+    //lc->release(inum_p);
+    //printf("yfs_cient::createfile, released! inum_p:%016llx\n, name:%s", inum_p, name);
     return ret;
 }
 
 yfs_client::status
 yfs_client::mkdir(inum inum_p, const char* name, inum &inum_c)
 {
-   lc->acquire(inum_p);
-   printf("yfs_cient::mkdir, acquired! inum_p:%016llx\n, name:%s", inum_p, name);
+   //lc->acquire(inum_p);
+   //printf("yfs_cient::mkdir, acquired! inum_p:%016llx\n, name:%s", inum_p, name);
 
    printf("yfs_client::mkdir inum_p:%016llx, inum_c:%016llx, name:%s\n", inum_p, inum_c, name);
    yfs_client::status ret =  createfile_helper(inum_p, name, inum_c, false);
    printf("yfs_client::mkdir pass! inum_p:%016llx, inum_c:%016llx, name:%s\n", inum_p, inum_c, name);
 
-   lc->release(inum_p);
-   printf("yfs_cient::mkdir, released! inum_p:%016llx\n, name:%s", inum_p, name);
+   //lc->release(inum_p);
+   //printf("yfs_cient::mkdir, released! inum_p:%016llx\n, name:%s", inum_p, name);
    return ret;
 
 }
