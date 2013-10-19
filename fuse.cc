@@ -255,6 +255,7 @@ fuseserver_createhelper(fuse_ino_t parent, const char *name,
   printf("fusesever_createhelper, start!");
     // fuse_ino_t -> unsigned long
   yfs_client::status ret;
+  yfs_client::status r;
   // In yfs, timeouts are always set to 0.0, and generations are always set to 0
   e->attr_timeout = 0.0;
   e->entry_timeout = 0.0;
@@ -263,10 +264,11 @@ fuseserver_createhelper(fuse_ino_t parent, const char *name,
   // I have already done. Shouda.
   yfs_client::inum inum_p = parent;
   yfs_client::inum inum_c;
-  ret = yfs->createfile(inum_p, name, inum_c); 
+  r = yfs->createfile(inum_p, name, inum_c); 
+
   printf("fusesever_createhelper yfs->createfile, parent: %016lx, filename %s, inum_c:%016llx, RETURN %d\n",
           parent, name, inum_c, ret);
-  if (ret == yfs_client::OK) {
+  if (r == yfs_client::OK) {
      struct stat st;
      e->ino = inum_c;
      printf("fusesever_createhelper before yfs->getattr, parent: %016lx, filename %s, inum_c:%016llx \n",
@@ -280,7 +282,7 @@ fuseserver_createhelper(fuse_ino_t parent, const char *name,
      return yfs_client::OK;
   }
   printf("fusesever_createhelper parent %016lx filename %s, create FAIL!\n", parent, name);
-  return yfs_client::IOERR;
+  return r;
 }
 
 void
