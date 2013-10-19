@@ -487,7 +487,7 @@ release:
 
 
 yfs_client::status
-yfs_client::read(inum inu, off_t offset, size_t size, std::string &buf)
+yfs_client::read(inum inu, int offset, long size, std::string &buf)
 {
    lc->acquire(inu);
    yfs_client::status r;
@@ -512,7 +512,7 @@ release:
 }
 
 yfs_client::status
-yfs_client::write(inum inu, off_t offset, size_t size, const char* buf)
+yfs_client::write(inum inu, int offset, long size, const char* buf)
 {
    lc->acquire(inu);
 

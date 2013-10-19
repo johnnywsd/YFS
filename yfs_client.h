@@ -60,8 +60,8 @@ class yfs_client {
   status createroot();
   status readdir(inum inum_p,std::vector<dirent>& dir_entries);
   status setattr(inum inum, fileinfo& finfo);
-  status read(inum inu, off_t offset, size_t size, std::string& buf);
-  status write(inum inu, off_t offset, size_t size, const char* buf);
+  status read(inum inu, int offset, long size, std::string& buf);
+  status write(inum inu, int offset, long size, const char* buf);
 
   status mkdir(inum inum_p, const char* name, inum &inum_c);
   status createfile(inum inum_p, const char* name, inum &inum_c, bool is_file);
