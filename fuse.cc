@@ -183,7 +183,7 @@ fuseserver_read(fuse_req_t req, fuse_ino_t ino, size_t size,
   // Change the above "#if 0" to "#if 1", and your code goes here
   yfs_client::inum inu = ino;
   yfs_client::status ret;
-  if ((ret = yfs->read(inu, off, size, buf)) != yfs_client::OK){
+  if ((ret = yfs->read(inu, (int)off, (long)size, buf)) != yfs_client::OK){
      fuse_reply_err(req, ENOSYS);
      return;
   }
@@ -221,7 +221,7 @@ fuseserver_write(fuse_req_t req, fuse_ino_t ino,
   yfs_client::status ret;
   //printf("fuseserver_write, inum:%016llx, off:%ld, size:%lld, buf:%s\n", inu, off,size, buf);
   //printf("fuseserver_write, inum:%016llx, off:%ld, size:%ld, buf:%s\n", inu, off,size, buf);
-  if ((ret = yfs->write(inu, (int)off, (unsigned int)size, buf)) != yfs_client::OK) {
+  if ((ret = yfs->write(inu, (int)off, (long)size, buf)) != yfs_client::OK) {
      fuse_reply_err(req, ENOSYS);
   }  
   fuse_reply_write(req, size);
@@ -252,7 +252,7 @@ yfs_client::status
 fuseserver_createhelper(fuse_ino_t parent, const char *name,
                         mode_t mode, struct fuse_entry_param *e)
 {
-  printf("fusesever_createhelper, start!");
+  printf("fusesever_createhelper, start!\n");
     // fuse_ino_t -> unsigned long
   yfs_client::status ret;
   yfs_client::status r;

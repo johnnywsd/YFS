@@ -201,6 +201,7 @@ yfs_client::lookup(inum inum_p, const char* name, inum &inum_c)
 
 release:
   lc->release(inum_p);
+  printf("yfs_client::lookup, RELEASED %016llx , parent NOT found\n", inum_p);
   return r;
 }
 
@@ -244,6 +245,7 @@ yfs_client::readdir(inum inum_p,std::vector<dirent>& dir_entries)
   }
 release:
   lc->release(inum_p);
+  printf("yfs_client::readdir RELEASED:%016llx \n", inum_p); 
   return r;
 }
 
@@ -251,7 +253,9 @@ release:
 yfs_client::status
 yfs_client::createfile_helper(inum inum_p, const char* name, inum& inum_c, bool is_file)
 { 
+  printf("yfs_cient::createfile_helper, before acquire inum_p:%016llx, name%s\n", inum_p, name);
   lc->acquire(inum_p);
+  printf("yfs_cient::createfile_helper, ACQUIRE inum_p:%016llx\n", inum_p);
   yfs_client::status r;
   bool flag_file_found = false;
   bool child_lock = false;
@@ -302,8 +306,8 @@ yfs_client::createfile_helper(inum inum_p, const char* name, inum& inum_c, bool 
 
         inum_c = new_inum;
         printf("yfs_client::createfile_helper, before acquire, inum_c:%016llx\n, name:%s",inum_c,name);
-        child_lock = true;
-        lc->acquire(inum_c);
+        //child_lock = true;
+        //lc->acquire(inum_c);
         printf("yfs_client::createfile_helper, acquired! inum_c:%016llx\n, name:%s",inum_c,name);
 
         extent_protocol::status e_ret;
@@ -362,9 +366,10 @@ release:
   if(child_lock)
   {
       lc->release(inum_c);
-      printf("yfs_client::createfile_helper, released! inum_c: %016llx\n, name:%s",inum_c, name);
+      printf("yfs_client::createfile_helper, RELEASED! inum_c: %016llx\n, name:%s",inum_c, name);
   }
   lc->release(inum_p);
+  printf("yfs_client::createfile_helper RELEASED, inum_p: %016llx \n", inum_p); 
   return r;
 }
 
@@ -482,9 +487,9 @@ yfs_client::setattr(inum inum, fileinfo& finfo)
 
 release:
   lc->release(inum);
+  printf("yfs_client::setattr RELEASED,%016llx \n", inum);
   return r;
 }
-
 
 yfs_client::status
 yfs_client::read(inum inu, int offset, long size, std::string &buf)
@@ -508,6 +513,7 @@ yfs_client::read(inum inu, int offset, long size, std::string &buf)
 
 release:
    lc->release(inu);
+  printf("yfs_client::read RELEASED,%016llx \n", inu);
    return r;
 }
 
@@ -533,6 +539,7 @@ yfs_client::write(inum inu, int offset, long size, const char* buf)
 
 release:
    lc->release(inu);
+   printf("yfs_client::write RELEASED,%016llx \n", inu);
    return r;
 }
 
@@ -584,6 +591,7 @@ yfs_client::unlink(inum inum_p, const char* name)
             printf("yfs_client::unlink, parent: %016llx, name:%s,target_inum:%016llx, FILE FOUND\n", 
                     inum_p, name_str.c_str(), target_inum);
             found = true;
+            lc->acquire(target_inum);
         }
         else if(!inum_str.empty())
         {
@@ -592,7 +600,6 @@ yfs_client::unlink(inum inum_p, const char* name)
 	}
     if (found)
     {
-        lc->acquire(target_inum);
 
         printf("yfs_client::unlink, Found target_inum: %016llx, name:%s \n", target_inum, target_name_str.c_str());
         if( isdir(target_inum) ) 
@@ -636,8 +643,10 @@ release:
     if(found)
     {
         lc->release(target_inum);
+        printf("yfs_client::unlink RELEASED,,target_inum:%016llx \n", target_inum);
     }
     lc->release(inum_p);
+    printf("yfs_client::unlink RELEASED,parent_inum:%016llx \n", inum_p);
     return ret;
 }
 
