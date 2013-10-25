@@ -1,16 +1,22 @@
 #ifndef yfs_client_h
 #define yfs_client_h
+#define SIZE_MAX ((unsigned int)(-1))
 
 #include <string>
 //#include "yfs_protocol.h"
 #include "extent_client.h"
+#include "lock_client.h"
 #include <vector>
+//#include <climits>
 
 #include "lock_protocol.h"
 #include "lock_client.h"
 
 class yfs_client {
   extent_client *ec;
+  lock_client *lc;
+  static const char DELIMITER; 
+  static const char SUB_DELIMITER; 
  public:
 
   typedef unsigned long long inum;
@@ -36,6 +42,9 @@ class yfs_client {
  private:
   static std::string filename(inum);
   static inum n2i(std::string);
+  static inum generate_inum(bool is_file);
+  static inum generate_inum(bool is_file, inum inum_p);
+  status createfile_helper(inum inum_p, const char* name, inum& inum_c, bool isfile);
  public:
 
   yfs_client(std::string, std::string);
@@ -45,6 +54,18 @@ class yfs_client {
 
   int getfile(inum, fileinfo &);
   int getdir(inum, dirinfo &);
-};
 
+  status lookup(inum inum_p, const char* name, inum& inum_c);
+  status createfile(inum inum_p, const char* name, inum& inum_c);
+  status createroot();
+  status readdir(inum inum_p,std::vector<dirent>& dir_entries);
+  status setattr(inum inum, fileinfo& finfo);
+  status read(inum inu, int offset, long size, std::string& buf);
+  status write(inum inu, int offset, long size, const char* buf);
+
+  status mkdir(inum inum_p, const char* name, inum &inum_c);
+  status createfile(inum inum_p, const char* name, inum &inum_c, bool is_file);
+  status unlink(inum inum_p, const char* name);
+
+};
 #endif 
