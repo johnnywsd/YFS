@@ -202,7 +202,7 @@ yfs_client::lookup(inum inum_p, const char* name, inum &inum_c)
 
 release:
   lc->release(inum_p);
-  printf("yfs_client::lookup, RELEASED %016llx , parent NOT found\n", inum_p);
+  printf("yfs_client::lookup, RELEASED %016llx\n", inum_p);
   return r;
 }
 

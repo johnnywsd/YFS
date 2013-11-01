@@ -134,6 +134,8 @@ lock_client_cache::acquire(lock_protocol::lockid_t lid)
         }
         else
         {
+            //It should be RELEASING
+            //
             //tprintf("lock_client_cache::acquire else, lid:%llu, status:%d\n",
                     //lid, lcb->status);
             pthread_cond_wait(&lcb->lock_cond, &lcb->lock_mutex);
@@ -193,8 +195,8 @@ lock_client_cache::release(lock_protocol::lockid_t lid)
     }
     else
     {
-        tprintf("lock_client_cache::release, NOT release, id:%s,\t lid:%llu, \
-                status:%d\n",
+        tprintf("lock_client_cache::release, NOT release, id:%s,\t lid:%llu, "
+                "status:%d\n",
                 id.c_str(), lid, lcb->status);
     }
     return lock_protocol::OK;
@@ -239,23 +241,23 @@ lock_client_cache::release_loop(void)
             lock_protocol::lockid_t lid = revoke_list.front();
             revoke_list.pop_front();
             lock_cache_bean* lcb = get_lock_bean(lid);
-            tprintf("lock_client_cache::release_loop, in while,\
-                    id%s,\t lid:%llu, status:%d\n", id.c_str(), lid, lcb->status);
+            tprintf("lock_client_cache::release_loop, in while,"
+                    "id%s,\t lid:%llu, status:%d\n", id.c_str(), lid, lcb->status);
             pthread_mutex_lock(&lcb->lock_mutex);
             if (lcb->status == LOCKED)
             {
                 lcb->status = RELEASING;
                 pthread_cond_wait(&lcb->revoke_cond,&lcb->lock_mutex);
-                tprintf("lock_client_cache::release_loop, in while, got lcb->revoke_cond,\
-                        id%s,\t lid:%llu, status:%d\n", id.c_str(), lid, lcb->status);
+                tprintf("lock_client_cache::release_loop, in while, got lcb->revoke_cond,"
+                        "id%s,\t lid:%llu, status:%d\n", id.c_str(), lid, lcb->status);
             }
             ret = cl->call(lock_protocol::release, lid, id, r);
             if (ret == lock_protocol::OK)
             {
                 lcb->status = NONE;
                 pthread_cond_signal(&lcb->lock_cond);
-                tprintf("lock_client_cache::release_loop, Revoked,\
-                        id%s,\t lid:%llu, status:%d\n", id.c_str(), lid, lcb->status);
+                tprintf("lock_client_cache::release_loop, Revoked,"
+                        "id%s,\t lid:%llu, status:%d\n", id.c_str(), lid, lcb->status);
             }
             else
             {

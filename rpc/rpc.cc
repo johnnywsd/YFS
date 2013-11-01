@@ -704,7 +704,7 @@ rpcs::checkduplicate_and_update(unsigned int clt_nonce, unsigned int xid,
 			}
 		}
 
-		if( !forgotten_flag){
+		if( !forgotten_flag || rlist.empty()){
 	         reply_t reply(xid);
 	         rlist.push_back(reply);
 	         // printf("NEW ");
