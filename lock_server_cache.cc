@@ -79,7 +79,8 @@ int lock_server_cache::acquire(lock_protocol::lockid_t lid, std::string id,
   lock_cache_bean* lcb;
   lcb = get_lock_bean(lid);
 
-  tprintf("lock_server_cache::acquire, begin, lid:%llu, id:%s\n, status:%d\n",
+  tprintf("This 1\n");
+  tprintf("lock_server_cache::acquire, begin, lid:%llu, id:%s, status:%d\n",
           lid, id.c_str(), lcb->status);
 
   if ( (lcb->status == LOCKFREE) || 
@@ -104,6 +105,7 @@ int lock_server_cache::acquire(lock_protocol::lockid_t lid, std::string id,
           pthread_cond_signal(&release_cond);
           pthread_mutex_unlock(&release_mutex);
       }
+      tprintf("This 2\n");
       tprintf("lock_server_cache::acquire, Acquired, lid:%llu, id:%s\n", lid, id.c_str());
   }
   else
@@ -111,6 +113,7 @@ int lock_server_cache::acquire(lock_protocol::lockid_t lid, std::string id,
       lcb->waiting_client_ids.push_back(id);
       if(lcb->status == LOCKED)
       {
+          tprintf("This 3\n");
           tprintf("lock_server_cache::acquire, status:LOCKED, lid:%llu, id:%s\n",
                   lid, id.c_str());
           lcb->status = REVOKING;
@@ -136,7 +139,8 @@ lock_server_cache::release(lock_protocol::lockid_t lid, std::string id,
     lock_cache_bean* lcb;
     pthread_mutex_lock(&lock_map_mutex);
 
-    tprintf("lock_server_cache::release, begin, id:%s,\t lid:%llu, status:%d\n ",
+    tprintf("This 4\n");
+    tprintf("lock_server_cache::release, begin, id:%s, lid:%llu, status:%d\n ",
             id.c_str(), lid, lcb->status);
 
     lcb = get_lock_bean(lid);
@@ -154,6 +158,7 @@ lock_server_cache::release(lock_protocol::lockid_t lid, std::string id,
         pthread_mutex_unlock(&retry_mutex);
     }
     pthread_mutex_unlock(&lock_map_mutex);
+    tprintf("This 5\n");
     tprintf("lock_server_cache::release, Released, id:%s, lid:%llu, status:%d\n ",
             id.c_str(), lid, lcb->status);
     return ret;
@@ -162,6 +167,7 @@ lock_server_cache::release(lock_protocol::lockid_t lid, std::string id,
 lock_protocol::status
 lock_server_cache::stat(lock_protocol::lockid_t lid, int &r)
 {
+    tprintf("This 6\n");
   tprintf("stat request\n");
   r = nacquire;
   return lock_protocol::OK;
@@ -183,21 +189,25 @@ lock_server_cache::release_loop(void)
             handle hl = (cb.client_id);
             if (hl.safebind())
             {
+                tprintf("This 7\n");
                 tprintf("lock_server_cache::release_loop, try to revoke, id:%s,\t lid:%llu\n",
                         cb.client_id.c_str(), cb.lid);
                 r_ret = hl.safebind()->call(rlock_protocol::revoke, cb.lid, r);
             }
             else
             {
+                tprintf("This 8\n");
                 tprintf("Revoke RPC failed. NOT safebind");
             }
             if(r_ret == rlock_protocol::OK)
             {
+                tprintf("This 9\n");
                 tprintf("lock_server_cache::release_loop, Revoked, id:%s,\t lid:%llu\n",
                         cb.client_id.c_str(), cb.lid);
             }
             if (r_ret != rlock_protocol::OK)
             {
+                tprintf("This 10\n");
                 tprintf("Revoke RPC failed, return: %d", r_ret);
             }
         }
@@ -224,11 +234,13 @@ lock_server_cache::retry_loop(void)
             }
             else
             {
+                tprintf("This 11\n");
                 tprintf("Retry RPC failed. NOT safebind");
             }
             if (r_ret != rlock_protocol::OK)
             {
-                tprintf("Retry RPC failed, return: %d", r_ret);
+                tprintf("This 12\n");
+                tprintf("Retry RPC failed, return:%d", r_ret);
             }
         }
         pthread_mutex_unlock(&retry_mutex);
