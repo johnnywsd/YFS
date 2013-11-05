@@ -156,7 +156,7 @@ lock_client_cache::acquire(lock_protocol::lockid_t lid)
     //tprintf("lock_client_cache::acquire END\n");
     if (acquire_succeed)
     {
-        tprintf("lock_client_cache::acquire, Acquired, id:%s,\t lid:%lld\n", id.c_str(), lid);
+        tprintf("lock_client_cache::acquire, Acquired, id:%s,\t lid:%llu\n", id.c_str(), lid);
     }
     return lock_protocol::OK;
 }
