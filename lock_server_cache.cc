@@ -154,7 +154,7 @@ lock_server_cache::release(lock_protocol::lockid_t lid, std::string id,
         pthread_mutex_unlock(&retry_mutex);
     }
     pthread_mutex_unlock(&lock_map_mutex);
-    tprintf("lock_server_cache::release, Released, id:%s,\t lid:%llu, status:%d\n ",
+    tprintf("lock_server_cache::release, Released, id:%s, lid:%llu, status:%d\n ",
             id.c_str(), lid, lcb->status);
     return ret;
 }
