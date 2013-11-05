@@ -139,11 +139,12 @@ lock_server_cache::release(lock_protocol::lockid_t lid, std::string id,
     lock_cache_bean* lcb;
     pthread_mutex_lock(&lock_map_mutex);
 
+    lcb = get_lock_bean(lid);
+
     tprintf("This 4\n");
-    tprintf("lock_server_cache::release, begin, id:%s, lid:%llu, status:%d\n ",
+    tprintf("lock_server_cache::release, begin, id:%s, lid:%llu, status:%d\n",
             id.c_str(), lid, lcb->status);
 
-    lcb = get_lock_bean(lid);
     lcb->status = LOCKFREE;
     if (lcb->waiting_client_ids.size() > 0 )
     {
