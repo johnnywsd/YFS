@@ -487,7 +487,7 @@ fuseserver_mkdir(fuse_req_t req, fuse_ino_t parent, const char *name,
         fuse_reply_err(req, ENOSYS);
     }
   }
-  if (ret == yfs_client::EXIST)
+  else if (ret == yfs_client::EXIST)
   {
     fuse_reply_err(req, EEXIST);
   }
