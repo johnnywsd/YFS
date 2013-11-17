@@ -255,7 +255,7 @@ lock_client_cache::release_loop(void)
             if (ret == lock_protocol::OK)
             {
                 lcb->status = NONE;
-                //pthread_cond_signal(&lcb->lock_cond);
+                pthread_cond_signal(&lcb->lock_cond);
                 tprintf("lock_client_cache::release_loop, Revoked,"
                         "id%s,\t lid:%llu, status:%d\n", id.c_str(), lid, lcb->status);
             }
