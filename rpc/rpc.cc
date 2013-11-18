@@ -642,6 +642,7 @@ rpcs::dispatch(djob_t *j)
 	c->decref();
 }
 
+
 // rpcs::dispatch calls this when an RPC request arrives.
 //
 // checks to see if an RPC with xid from clt_nonce has already been received.
@@ -662,8 +663,70 @@ rpcs::checkduplicate_and_update(unsigned int clt_nonce, unsigned int xid,
 {
 	ScopedLock rwl(&reply_window_m_);
 
+	bool forgotten_flag = true;
+	// bool forgotten_flag = false;
+	std::map<unsigned int, std::list<reply_t> >::iterator found_it = reply_window_.find(clt_nonce);
+	if(found_it != reply_window_.end()){
+		std::list<reply_t>  &rlist = reply_window_[clt_nonce];
+		if(rlist.empty() ){
+	         reply_t reply(xid);
+	         rlist.push_back(reply);
+	         // printf("NEW ");
+	         return NEW;
+	     }
+
+		std::list<reply_t>::iterator it = rlist.begin();
+		while(it != rlist.end() ){
+			if (it->xid < xid_rep){
+				free (it->buf);
+				it = rlist.erase(it);
+			}
+			else
+			{
+				if(it->xid == xid && it->cb_present == true)
+				{
+					*b = it->buf;
+		            *sz = it->sz;
+		            // printf("DONE ");
+		            return DONE;
+				}
+				else if (it->xid == xid && it->cb_present == false)
+				{
+					// printf("INPROGRESS ");
+	                return INPROGRESS;			
+				}
+				else if (xid > it->xid)
+				{
+					//xid larger than any it-xid
+					forgotten_flag = false;
+				}
+				it++;
+			}
+		}
+
+		if( !forgotten_flag || rlist.empty()){
+	         reply_t reply(xid);
+	         rlist.push_back(reply);
+	         // printf("NEW ");
+	         return NEW;
+	     }
+	     else {
+	     	// printf("FORGOTTEN ");
+	        return FORGOTTEN;
+	     }
+	}
+	else{
+		std::list<reply_t>  &rlist = reply_window_[clt_nonce];
+		reply_t reply(xid);
+        rlist.push_back(reply);
+        // printf("NEW ");
+        return NEW;
+	}
+	
+
+
         // You fill this in for Lab 1.
-	return NEW;
+
 }
 
 // rpcs::dispatch calls add_reply when it is sending a reply to an RPC,
@@ -677,6 +740,23 @@ rpcs::add_reply(unsigned int clt_nonce, unsigned int xid,
 {
 	ScopedLock rwl(&reply_window_m_);
         // You fill this in for Lab 1.
+	std::map<unsigned int, std::list<reply_t> >::iterator flag = reply_window_.find(clt_nonce);
+	if(flag != reply_window_.end())
+	{
+		std::list<reply_t>  &rlist = reply_window_[clt_nonce];
+		std::list<reply_t>::iterator findIter = std::find_if(rlist.begin(), rlist.end(), find_xid_cond(xid));
+		if(findIter != rlist.end()){
+			// printf("DOWN1! ");
+			findIter->buf = b;
+			// printf("DOWN2! ");
+			findIter->sz = sz;
+			// printf("DOWN3! ");
+			findIter->cb_present = true;
+		}
+
+	}
+
+	
 }
 
 void
