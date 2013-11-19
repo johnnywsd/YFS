@@ -273,6 +273,9 @@ fuseserver_createhelper(fuse_ino_t parent, const char *name,
   // I have already done. Shouda.
   yfs_client::inum inum_p = parent;
   yfs_client::inum inum_c;
+  printf("fusesever_createhelper, before yfs->createfile,"
+      "parent: %016lx, filename %s, inum_c:%016llx", 
+          parent, name, inum_c);
   r = yfs->createfile(inum_p, name, inum_c); 
 
   printf("fusesever_createhelper yfs->createfile,"

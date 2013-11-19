@@ -260,9 +260,10 @@ lock_client_cache::release_loop(void)
 
             //Call release
             tprintf("lock_client_cache::release_loop, cl->call(release..),call flush "
-                        "id%s,\t lid:%016llx, status:%d\n",
+                        "id:%s, lid:%016llx, status:%d\n",
                         id.c_str(), lid, lcb->status);
             lu->dorelease(lid);
+            tprintf("s1\n");
 
             ret = cl->call(lock_protocol::release, lid, id, r);
             if (ret == lock_protocol::OK)

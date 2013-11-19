@@ -24,6 +24,7 @@ lock_release_user_impl::lock_release_user_impl(extent_client* ec)
 void
 lock_release_user_impl::dorelease(lock_protocol::lockid_t lid)
 {
+  tprintf("lock_release_user_impl::dorelease, lid:%016llx\n", lid);
   ec->flush(lid);
 }
 
@@ -231,6 +232,7 @@ release:
 yfs_client::status 
 yfs_client::readdir(inum inum_p,std::vector<dirent>& dir_entries)
 {
+  bool found = false;
   tprintf("yfs_client::readdir, before lc->acquire, inum_p:%016llx\n", inum_p);
   lc->acquire(inum_p);
   tprintf("yfs_client::readdir\n");
@@ -309,10 +311,10 @@ yfs_client::createfile_helper(inum inum_p, const char* name, inum& inum_c, bool 
             if (target_name_str == name_str)
             {
                 //tprintf("yfs_client::createfile_helper while loop, FOUND, %016llx parent directory found the filename %s \n", inum_p, target_name_str.c_str());
+                lc->acquire(inum_c);
+                child_lock = true;
                 inum_c = n2i(inum_str);
                 flag_file_found = true;
-                child_lock = true;
-                lc->acquire(inum_c);
                 break;
             }
         }
