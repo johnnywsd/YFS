@@ -11,10 +11,21 @@
 #include "lock_protocol.h"
 #include "lock_client_cache.h"
 
+class lock_release_user_impl : public lock_release_user
+{
+  private:
+    class extent_client* ec;
+  public:
+    lock_release_user_impl(extent_client* ec);
+    virtual ~lock_release_user_impl(){};
+    void dorelease(lock_protocol::lockid_t lid);
+};
+
 class yfs_client {
   extent_client *ec;
   //lock_client *lc;
   lock_client_cache *lc;
+  lock_release_user_impl *lu;
   static const char DELIMITER; 
   static const char SUB_DELIMITER; 
  public:

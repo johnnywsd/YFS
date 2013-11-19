@@ -15,11 +15,25 @@
 const char yfs_client::DELIMITER = ';'; 
 const char yfs_client::SUB_DELIMITER = ','; 
 
+
+lock_release_user_impl::lock_release_user_impl(extent_client* ec)
+{
+  this->ec = ec;
+}
+void
+lock_release_user_impl::dorelease(lock_protocol::lockid_t lid)
+{
+  ec->flush(lid);
+}
+
 yfs_client::yfs_client(std::string extent_dst, std::string lock_dst)
 {
   ec = new extent_client(extent_dst);
   //lc = new lock_client(lock_dst);
-  lc = new lock_client_cache(lock_dst);
+  lu = new lock_release_user_impl(ec);
+
+  lc = new lock_client_cache(lock_dst, lu);
+
 }
 
 yfs_client::inum
@@ -58,7 +72,7 @@ int
 yfs_client::getfile(inum inum, fileinfo &fin)
 {
   //printf("yfs_client::getfile %016llx,before lc-acquire \n", inum);
-  //lc->acquire(inum);
+  lc->acquire(inum);
 
   printf("yfs_client::getfile %016llx,finished lc-acquire \n", inum);
   int r = OK;
@@ -79,17 +93,17 @@ yfs_client::getfile(inum inum, fileinfo &fin)
   printf("getfile %016llx -> sz %llu\n", inum, fin.size);
 
  release:
-  //printf("yfs_client::getfile %016llx,before lc-release \n", inum);
+  printf("yfs_client::getfile %016llx,before lc-release \n", inum);
  
-  //lc->release(inum);
-  //printf("yfs_client::getfile %016llx,finished lc-release \n", inum);
+  lc->release(inum);
+  printf("yfs_client::getfile %016llx,finished lc-release \n", inum);
   return r;
 }
 
 int
 yfs_client::getdir(inum inum, dirinfo &din)
 {
-  //lc->acquire(inum);
+  lc->acquire(inum);
 
   printf("yfs_client::getdir %016llx,finished lc-acquire \n", inum);
   int r = OK;
@@ -109,8 +123,8 @@ yfs_client::getdir(inum inum, dirinfo &din)
  release:
   printf("getdir Release %016llx, RETURN %d\n", inum, r);
   
-  //lc->release(inum);
-  //printf("yfs_client::getdir %016llx,finished lc-release \n", inum);
+  lc->release(inum);
+  printf("yfs_client::getdir %016llx,finished lc-release \n", inum);
   return r;
 }
 
@@ -158,7 +172,7 @@ yfs_client::generate_inum(bool is_file, inum inum_p)
 yfs_client::status
 yfs_client::lookup(inum inum_p, const char* name, inum &inum_c)
 {
-  //lc->acquire(inum_p);
+  lc->acquire(inum_p);
   std::string buf;
   printf("yfs_client::lookup\n" );
   extent_protocol::status flag_get = ec->get(inum_p,0,SIZE_MAX, buf) ;
@@ -205,7 +219,7 @@ yfs_client::lookup(inum inum_p, const char* name, inum &inum_c)
   }
 
 release:
-  //lc->release(inum_p);
+  lc->release(inum_p);
   printf("yfs_client::lookup, RELEASED %016llx\n", inum_p);
   return r;
 }
@@ -214,7 +228,7 @@ release:
 yfs_client::status 
 yfs_client::readdir(inum inum_p,std::vector<dirent>& dir_entries)
 {
-  //lc->acquire(inum_p);
+  lc->acquire(inum_p);
   printf("yfs_client::readdir\n");
   std::string buf;
   yfs_client::status r;
@@ -249,8 +263,8 @@ yfs_client::readdir(inum inum_p,std::vector<dirent>& dir_entries)
     goto release;
   }
 release:
-  //lc->release(inum_p);
-  //printf("yfs_client::readdir RELEASED:%016llx \n", inum_p); 
+  lc->release(inum_p);
+  printf("yfs_client::readdir RELEASED:%016llx \n", inum_p); 
   return r;
 }
 
@@ -311,8 +325,8 @@ yfs_client::createfile_helper(inum inum_p, const char* name, inum& inum_c, bool 
 
             inum_c = new_inum;
             printf("yfs_client::createfile_helper, before acquire, inum_c:%016llx\n, name:%s",inum_c,name);
-            //child_lock = true;
-            //lc->acquire(inum_c);
+            child_lock = true;
+            lc->acquire(inum_c);
             printf("yfs_client::createfile_helper, acquired! inum_c:%016llx\n, name:%s",inum_c,name);
 
             extent_protocol::status e_ret;
@@ -499,7 +513,7 @@ release:
 yfs_client::status
 yfs_client::read(inum inu, int offset, long size, std::string &buf)
 {
-   //lc->acquire(inu);
+   lc->acquire(inu);
    yfs_client::status r;
    printf("yfs_client::read %016llx, off %d size %ld \n",
            inu, (int)offset, (long)size);
@@ -517,8 +531,8 @@ yfs_client::read(inum inu, int offset, long size, std::string &buf)
    goto release;
 
 release:
-   //lc->release(inu);
-   //printf("yfs_client::read RELEASED,%016llx \n", inu);
+   lc->release(inu);
+   printf("yfs_client::read RELEASED,%016llx \n", inu);
    return r;
 }
 

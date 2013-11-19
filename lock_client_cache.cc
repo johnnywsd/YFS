@@ -73,6 +73,7 @@ lock_client_cache::get_lock_bean(lock_protocol::lockid_t lid)
     {
         //tprintf("lock_client_cache::get_lock_bean NOT found, create new, lid:%llu\n", lid);
         ret = new lock_cache_bean();
+        ret->is_doflush = false;
         int flag_1, flag_2, flag_3;
         flag_1 = pthread_mutex_init(&ret->lock_mutex,NULL);
         flag_2 = pthread_cond_init(&ret->lock_cond,NULL);
@@ -253,6 +254,13 @@ lock_client_cache::release_loop(void)
                 tprintf("lock_client_cache::release_loop, in while, got lcb->revoke_cond,"
                         "id%s,\t lid:%llu, status:%d\n", id.c_str(), lid, lcb->status);
             }
+
+            //Call release
+            tprintf("lock_client_cache::release_loop, cl->call(release..),call flush \
+                        id%s,\t lid:%llu, status:%d\n",
+                        id.c_str(), lid, lcb->status);
+            lu->dorelease(lid);
+
             ret = cl->call(lock_protocol::release, lid, id, r);
             if (ret == lock_protocol::OK)
             {

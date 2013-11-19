@@ -34,6 +34,8 @@ class lock_client_cache : public lock_client {
             pthread_mutex_t lock_mutex;
             pthread_cond_t lock_cond;
             pthread_cond_t revoke_cond;
+
+            bool is_doflush;
         };
         typedef std::map<lock_protocol::lockid_t, lock_cache_bean*> LockMapClientT;
         LockMapClientT lock_map;
