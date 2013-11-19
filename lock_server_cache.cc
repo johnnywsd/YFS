@@ -187,7 +187,8 @@ lock_server_cache::release_loop(void)
         {
             client_bean cb = revoke_list.front();
             revoke_list.pop_front();
-            handle hl = (cb.client_id);
+            //handle hl = (cb.client_id);
+            handle hl(cb.client_id);
             if (hl.safebind())
             {
                 tprintf("This 7\n");
