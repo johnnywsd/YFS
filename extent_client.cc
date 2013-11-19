@@ -77,13 +77,29 @@ extent_client::getattr(extent_protocol::extentid_t eid,
   extent_protocol::status ret = extent_protocol::OK;
   //ret = cl->call(extent_protocol::getattr, eid, attr); //remove in lab5
   ScopedLock ml(&extent_cache_map_mutex);
+  extent_bean* bean;
   while(true)
   {
     if(extent_cache_map.find(eid) == extent_cache_map.end())
     {
       tprintf("extent_client::getattr, not found in cache");
       ret = load_from_extent_server(eid);
-      if
+      if ( ret == extent_protocol::OK )
+      {
+        continue;
+      }
+      else
+      {
+        break;
+      }
+    }
+    else 
+    {
+      //extent_cache_map.find(eid) != extent_cache_map.end()
+      bean = extent_cache_map[eid];
+      attr = bean->ext_attr;
+      ret = extent_protocol::OK;
+      break;
     }
   }
   return ret;
@@ -113,7 +129,7 @@ extent_client::put(extent_protocol::extentid_t eid, std::string buf, int offset)
         extent_bean* bean = new extent_bean();
         extent_cache_map[eid] = bean;
         tprintf("extent_client::put, NOT found it both in cache and server,\
-            eid:%016llx\n", eid);
+            eid:%016llx, ret:%d\n", eid, ret);
         continue;
       }
     }
@@ -151,6 +167,9 @@ extent_client::put(extent_protocol::extentid_t eid, std::string buf, int offset)
       ext_obj->ext_attr.ctime = time(NULL);
       ext_obj->ext_attr.atime = time(NULL);
       ext_obj->ext_attr.size = ext_obj->data.size();
+      
+      ext_obj->is_dirty = true;
+      dirty_set.insert(eid);
       //return extent_protocol::IOERR;
       ret = extent_protocol::OK;
       break;
@@ -164,7 +183,7 @@ extent_client::remove(extent_protocol::extentid_t eid)
 {
   extent_protocol::status ret = extent_protocol::OK;
   int r;
-  ret = cl->call(extent_protocol::remove, eid, r);
+  ret = cl->call(extent_protocol::remove, eid, r); //remove in lab5
   return ret;
 }
 

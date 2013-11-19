@@ -6,6 +6,7 @@
 #include <string>
 #include "extent_protocol.h"
 #include "rpc.h"
+#include <set>
 
 class extent_client {
  private:
@@ -20,7 +21,9 @@ class extent_client {
     extent_protocol::attr ext_attr;
   };
   typedef std::map<extent_protocol::extentid_t, extent_bean*> ExtentCacheMapT;
+  typedef std::set<extent_protocol::extentid_t> DirtySetT;
   ExtentCacheMapT extent_cache_map;
+  DirtySetT dirty_set;
   pthread_mutex_t extent_cache_map_mutex;
 
  public:
