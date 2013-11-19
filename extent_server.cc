@@ -151,6 +151,7 @@ int extent_server::getattr(extent_protocol::extentid_t id, extent_protocol::attr
     ret = extent_protocol::NOENT;
   }
   
+  tprintf("extent_server::getattr, END, id:%016llx,ret:%d\n", id,ret);
   //tprintf("extent_server::getattr Release, Return OK %016llx \n", id);
   //return extent_protocol::OK;
   return ret;
