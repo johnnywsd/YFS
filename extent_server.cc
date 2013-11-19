@@ -124,6 +124,7 @@ int extent_server::getattr(extent_protocol::extentid_t id, extent_protocol::attr
   // You replace this with a real implementation. We send a phony response
   // for now because it's difficult to get FUSE to do anything (including
   // unmount) if getattr fails.
+  extent_protocol::status ret = extent_protocol::OK;
   ScopedLock ml(&ext_mutex);
   extent_struct* ext_obj;
   if (this->extent_storage.find(id) != extent_storage.end()){
@@ -133,16 +134,20 @@ int extent_server::getattr(extent_protocol::extentid_t id, extent_protocol::attr
     a.atime = ext_obj->file_attr.atime;
     a.mtime = ext_obj->file_attr.mtime;
     a.ctime = ext_obj->file_attr.ctime;
+    ret = extent_protocol::OK;
   }
   else{
     a.size = 0;
     a.atime = 0;
     a.mtime = 0;
     a.ctime = 0;
+    ret = extent_protocol::NOENT;
   }
   
   //printf("extent_server::getattr Release, Return OK %016llx \n", id);
-  return extent_protocol::OK;
+  //return extent_protocol::OK;
+  return ret;
+
 }
 
 int extent_server::remove(extent_protocol::extentid_t id, int &)
