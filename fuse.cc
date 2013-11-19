@@ -42,6 +42,8 @@ getattr(yfs_client::inum inum, struct stat &st)
 {
   yfs_client::status ret;
 
+  //lc->acquire(inum);
+
   bzero(&st, sizeof(st));
 
   st.st_ino = inum;
@@ -50,7 +52,8 @@ getattr(yfs_client::inum inum, struct stat &st)
      yfs_client::fileinfo info;
      ret = yfs->getfile(inum, info);
      if(ret != yfs_client::OK)
-       return ret;
+       //return ret;
+       goto release;
      st.st_mode = S_IFREG | 0666;
      st.st_nlink = 1;
      st.st_atime = info.atime;
@@ -62,7 +65,8 @@ getattr(yfs_client::inum inum, struct stat &st)
      yfs_client::dirinfo info;
      ret = yfs->getdir(inum, info);
      if(ret != yfs_client::OK)
-       return ret;
+       //return ret;
+       goto release;
      st.st_mode = S_IFDIR | 0777;
      st.st_nlink = 2;
      st.st_atime = info.atime;
@@ -72,7 +76,12 @@ getattr(yfs_client::inum inum, struct stat &st)
    }
 
    printf("getattr %016llx %d RETURN OK\n", inum, yfs->isfile(inum));
-   return yfs_client::OK;
+   //return yfs_client::OK;
+   ret = yfs_client::OK;
+
+release:
+   //lc-release(inum);
+   return ret;
 }
 
 //
@@ -266,15 +275,18 @@ fuseserver_createhelper(fuse_ino_t parent, const char *name,
   yfs_client::inum inum_c;
   r = yfs->createfile(inum_p, name, inum_c); 
 
-  printf("fusesever_createhelper yfs->createfile, parent: %016lx, filename %s, inum_c:%016llx, RETURN %d\n",
+  printf("fusesever_createhelper yfs->createfile,"
+      "parent: %016lx, filename %s, inum_c:%016llx, RETURN %d\n",
           parent, name, inum_c, ret);
   if (r == yfs_client::OK) {
      struct stat st;
      e->ino = inum_c;
-     printf("fusesever_createhelper before yfs->getattr, parent: %016lx, filename %s, inum_c:%016llx \n",
+     printf("fusesever_createhelper before yfs->getattr,"
+         " parent: %016lx, filename %s, inum_c:%016llx \n",
           parent, name, inum_c);
      ret = getattr(inum_c, st);
-     printf("fusesever_createhelper yfs->getattr, parent: %016lx, filename %s, inum_c:%016llx, RETURN %d\n",
+     printf("fusesever_createhelper yfs->getattr,"
+         " parent: %016lx, filename %s, inum_c:%016llx, RETURN %d\n",
           parent, name, inum_c, ret);
      if(ret == yfs_client::OK)
          e->attr = st;
