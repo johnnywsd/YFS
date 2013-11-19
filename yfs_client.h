@@ -78,5 +78,7 @@ class yfs_client {
   status createfile(inum inum_p, const char* name, inum &inum_c, bool is_file);
   status unlink(inum inum_p, const char* name);
 
+  status getattr(inum inu, extent_protocol::attr& a);
+
 };
 #endif 

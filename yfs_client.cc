@@ -679,3 +679,18 @@ release:
     return ret;
 }
 
+yfs_client::status
+yfs_client::getattr(inum inu, extent_protocol::attr& a)
+{
+  yfs_client::status ret = yfs_client::OK;
+  extent_protocol::status ret_1 = ec->getattr(inu, a);
+  if(ret_1 == extent_protocol::OK)
+  {
+    ret = yfs_client::OK;
+  }
+  else
+  {
+    ret = yfs_client::IOERR;
+  }
+  return ret;
+}
