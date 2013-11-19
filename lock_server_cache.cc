@@ -80,7 +80,7 @@ int lock_server_cache::acquire(lock_protocol::lockid_t lid, std::string id,
   lcb = get_lock_bean(lid);
 
   tprintf("This 1\n");
-  tprintf("lock_server_cache::acquire, begin, lid:%llu, id:%s, status:%d\n",
+  tprintf("lock_server_cache::acquire, begin, lid:%016llx, id:%s, status:%d\n",
           lid, id.c_str(), lcb->status);
 
   if ( (lcb->status == LOCKFREE) || 
@@ -106,7 +106,7 @@ int lock_server_cache::acquire(lock_protocol::lockid_t lid, std::string id,
           pthread_mutex_unlock(&release_mutex);
       }
       tprintf("This 2\n");
-      tprintf("lock_server_cache::acquire, Acquired, lid:%llu, id:%s\n", lid, id.c_str());
+      tprintf("lock_server_cache::acquire, Acquired, lid:%016llx, id:%s\n", lid, id.c_str());
   }
   else
   {
@@ -114,7 +114,7 @@ int lock_server_cache::acquire(lock_protocol::lockid_t lid, std::string id,
       if(lcb->status == LOCKED)
       {
           tprintf("This 3\n");
-          tprintf("lock_server_cache::acquire, status:LOCKED, lid:%llu, id:%s\n",
+          tprintf("lock_server_cache::acquire, status:LOCKED, lid:%016llx, id:%s\n",
                   lid, id.c_str());
           lcb->status = REVOKING;
           pthread_mutex_lock(&release_mutex);
@@ -142,7 +142,7 @@ lock_server_cache::release(lock_protocol::lockid_t lid, std::string id,
     lcb = get_lock_bean(lid);
 
     tprintf("This 4\n");
-    tprintf("lock_server_cache::release, begin, id:%s, lid:%llu, status:%d\n",
+    tprintf("lock_server_cache::release, begin, id:%s, lid:%016llx, status:%d\n",
             id.c_str(), lid, lcb->status);
 
     lcb->status = LOCKFREE;
@@ -160,7 +160,7 @@ lock_server_cache::release(lock_protocol::lockid_t lid, std::string id,
     }
     pthread_mutex_unlock(&lock_map_mutex);
     tprintf("This 5\n");
-    tprintf("lock_server_cache::release, Released, id:%s, lid:%llu, status:%d\n ",
+    tprintf("lock_server_cache::release, Released, id:%s, lid:%016llx, status:%d\n ",
             id.c_str(), lid, lcb->status);
     return ret;
 }
@@ -191,7 +191,7 @@ lock_server_cache::release_loop(void)
             if (hl.safebind())
             {
                 tprintf("This 7\n");
-                tprintf("lock_server_cache::release_loop, try to revoke, id:%s,\t lid:%llu\n",
+                tprintf("lock_server_cache::release_loop, try to revoke, id:%s,\t lid:%016llx\n",
                         cb.client_id.c_str(), cb.lid);
                 r_ret = hl.safebind()->call(rlock_protocol::revoke, cb.lid, r);
             }
@@ -203,7 +203,7 @@ lock_server_cache::release_loop(void)
             if(r_ret == rlock_protocol::OK)
             {
                 tprintf("This 9\n");
-                tprintf("lock_server_cache::release_loop, Revoked, id:%s,\t lid:%llu\n",
+                tprintf("lock_server_cache::release_loop, Revoked, id:%s,\t lid:%016llx\n",
                         cb.client_id.c_str(), cb.lid);
             }
             if (r_ret != rlock_protocol::OK)
