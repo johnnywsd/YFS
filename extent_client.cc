@@ -82,7 +82,7 @@ extent_client::getattr(extent_protocol::extentid_t eid,
   {
     if(extent_cache_map.find(eid) == extent_cache_map.end())
     {
-      tprintf("extent_client::getattr, not found in cache");
+      tprintf("extent_client::getattr, not found in cache\n");
       ret = load_from_extent_server(eid);
       if ( ret == extent_protocol::OK )
       {
@@ -112,13 +112,15 @@ extent_client::put(extent_protocol::extentid_t eid, std::string buf, int offset)
   //int r;  //removed in lab5
   //ret = cl->call(extent_protocol::put, eid, buf, offset, r); //removed in lab5
 
+  tprintf("extent_client::put, BEGIN, eid:%016llx, offset:%d, buf:%s\n",
+      eid, offset, buf.c_str());
   ScopedLock ml(&extent_cache_map_mutex);
   while(true)
   {
     if( extent_cache_map.find(eid) == extent_cache_map.end() )
     {
-      tprintf("extent_client::put, NOT found it in cache,\
-          eid:%016llx\n", eid);
+      tprintf("extent_client::put, NOT found it in cache,"
+          "eid:%016llx\n", eid);
       ret = load_from_extent_server(eid);
       if ( ret == extent_protocol::OK )
       {
@@ -128,18 +130,18 @@ extent_client::put(extent_protocol::extentid_t eid, std::string buf, int offset)
       {
         extent_bean* bean = new extent_bean();
         extent_cache_map[eid] = bean;
-        tprintf("extent_client::put, NOT found it both in cache and server,\
-            eid:%016llx, ret:%d\n", eid, ret);
+        tprintf("extent_client::put, NOT found it both in cache and server,"
+            "eid:%016llx, ret:%d\n", eid, ret);
         continue;
       }
     }
     else
     {
-      tprintf("extent_client::put, Found it in cache,\
-          eid:%016llx\n", eid);
 
       extent_bean* bean = extent_cache_map[eid];
       extent_bean* ext_obj = bean;
+      tprintf("extent_client::put, Found it in cache,"
+          "eid:%016llx, data:%s\n", eid, bean->data.c_str());
 
       int data_size = (int) (ext_obj->data.size());
       if(offset > data_size)
@@ -149,7 +151,8 @@ extent_client::put(extent_protocol::extentid_t eid, std::string buf, int offset)
       }
       else if (offset < 0)
       {
-        printf("extent_client::put, offset<1,eid:%016llx\n", eid);
+        printf("extent_client::put, offset<1, eid:%016llx, data:%s\n",
+            eid,buf.c_str());
         ext_obj->data = buf;
       }
       else 
@@ -205,27 +208,28 @@ extent_client::load_from_extent_server(extent_protocol::extentid_t eid)
     extent_bean* bean = new extent_bean();
     bean->ext_attr = ext_attr;
     bean->is_dirty = false;
-    tprintf("extent_client::load_from_extent_server, get attr SUCCEED, \
-        eid:%016llx\n", eid);
+
+    tprintf("extent_client::load_from_extent_server, get attr SUCCEED,"
+        "eid:%016llx, ext_attr.size:%u\n", eid, ext_attr.size);
     ret = cl->call(extent_protocol::get, eid, 0, ext_attr.size, bean->data);
     if ( ret == extent_protocol::OK )
     {
-      tprintf("extent_client::load_from_extent_server, get data SUCCEED,\
-          eid:%016llx, data:%s\n", eid,bean->data.c_str());
+      tprintf("extent_client::load_from_extent_server, get data SUCCEED,"
+          "eid:%016llx, data:%s\n", eid,bean->data.c_str());
       extent_cache_map[eid] = bean;
       return ret;
     }
     else
     {
-      tprintf("extent_client::load_from_extent_server, get data FAILED,\
-          eid:%016llx, ret:%d\n", eid, ret );
+      tprintf("extent_client::load_from_extent_server, get data FAILED,"
+          "eid:%016llx, ret:%d\n", eid, ret );
       return ret;
     }
   }
   else
   {
-    tprintf("extent_client::load_from_extent_server, FAILED,\
-        eid:%016llx, ret:%d\n", eid, ret );
+    tprintf("extent_client::load_from_extent_server, FAILED,"
+        "eid:%016llx, ret:%d\n", eid, ret );
   }
   return ret;
 }
@@ -236,44 +240,45 @@ extent_client::flush(extent_protocol::extentid_t eid)
   extent_protocol::status ret = 0;
   int r=0;
   ScopedLock ml(&extent_cache_map_mutex);
-  tprintf("extent_client::flush, Begin got lock,\
-      eid:%016llx\n", eid);
+  tprintf("extent_client::flush, Begin got lock,"
+      "eid:%016llx\n", eid);
   if( extent_cache_map.find(eid) != extent_cache_map.end() )
   {
-    tprintf("extent_client::flush, find it in cache,\
-        eid:%016llx\n", eid);
+    tprintf("extent_client::flush, find it in cache,"
+        "eid:%016llx\n", eid);
     extent_bean *bean = extent_cache_map[eid];
     if ( bean->is_dirty )
     {
-      tprintf("extent_client::flush, is_dirty=true,\
-          eid:%016llx\n", eid);
-      ret = cl->call(extent_protocol::put, eid, bean->data, 0, r);
+      tprintf("extent_client::flush, is_dirty=true,"
+          "eid:%016llx, data:%s\n", eid, bean->data.c_str());
+      ret = cl->call(extent_protocol::put, eid, bean->data, -1, r);
     }
     else
     {
-      tprintf("extent_client::flush, is_dirty=false,\
-          eid:%016llx\n", eid);
+      tprintf("extent_client::flush, is_dirty=false,"
+          "eid:%016llx\n", eid);
       ret = extent_protocol::OK;
     }
     delete(extent_cache_map[eid]);
     extent_cache_map.erase(eid);
+    dirty_set.erase(eid);
   }
   else
   {
-    tprintf("extent_client::flush, NOT find it in cache,\
-        eid:%016llx\n", eid);
+    tprintf("extent_client::flush, NOT find it in cache,"
+        "eid:%016llx\n", eid);
     if ( dirty_set.find(eid) != dirty_set.end() )
     {
       // It must be deleted.
-      tprintf("extent_client::flush, NOT find it in cache, but it's in dirt_set,\
-        eid:%016llx\n", eid);
+      tprintf("extent_client::flush, NOT find it in cache, but it's in dirt_set,"
+        "eid:%016llx\n", eid);
       ret = cl->call(extent_protocol::remove, eid, r);
       dirty_set.erase(eid);
     }
     else
     {
-      tprintf("extent_client::flush, NOT find it in cache, and it's NOT in dirt_set,\
-        eid:%016llx\n", eid);
+      tprintf("extent_client::flush, NOT find it in cache, and it's NOT in dirt_set,"
+        "eid:%016llx\n", eid);
     }
   }
   return ret;

@@ -539,6 +539,7 @@ release:
 yfs_client::status
 yfs_client::write(inum inu, int offset, long size, const char* buf)
 {
+   printf("yfs_client::write, BEGIN, %016llx off:%d size:%ld, buf:%s \n", inu, (int)offset, (long)size, buf);   
    lc->acquire(inu);
 
    yfs_client::status r;
