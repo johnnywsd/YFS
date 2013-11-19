@@ -50,8 +50,11 @@ getattr(yfs_client::inum inum, struct stat &st)
   st.st_ino = inum;
   tprintf("getattr %016llx %d\n", inum, yfs->isfile(inum));
   if(yfs->isfile(inum)){
-     yfs_client::fileinfo info;
-     ret = yfs->getfile(inum, info);
+     //yfs_client::fileinfo info;
+     //ret = yfs->getfile(inum, info);
+
+     extent_protocol::attr info;
+     ret = yfs->getattr(inum, info);
      if(ret != yfs_client::OK)
        //return ret;
        goto release;
@@ -61,10 +64,12 @@ getattr(yfs_client::inum inum, struct stat &st)
      st.st_mtime = info.mtime;
      st.st_ctime = info.ctime;
      st.st_size = info.size;
-     tprintf("   getattr -> %llu, is_file \n", info.size);
+     tprintf("   getattr -> %u, is_file \n", info.size);
    } else {
-     yfs_client::dirinfo info;
-     ret = yfs->getdir(inum, info);
+     //yfs_client::dirinfo info;
+     //ret = yfs->getdir(inum, info);
+     extent_protocol::attr info;
+     ret = yfs->getattr(inum, info);
      if(ret != yfs_client::OK)
        //return ret;
        goto release;
@@ -73,7 +78,7 @@ getattr(yfs_client::inum inum, struct stat &st)
      st.st_atime = info.atime;
      st.st_mtime = info.mtime;
      st.st_ctime = info.ctime;
-     tprintf("   getattr -> %lu %lu %lu, it's dir\n", info.atime, info.mtime, info.ctime);
+     tprintf("   getattr -> %u %u %u, it's dir\n", info.atime, info.mtime, info.ctime);
    }
 
    tprintf("getattr %016llx %d RETURN OK\n", inum, yfs->isfile(inum));
@@ -111,9 +116,12 @@ fuseserver_getattr(fuse_req_t req, fuse_ino_t ino,
     ret = getattr(inum, st);
     if(ret != yfs_client::OK){
       fuse_reply_err(req, ENOENT);
-      return;
     }
-    fuse_reply_attr(req, &st, 0);
+    else
+    {
+      fuse_reply_attr(req, &st, 0);
+    }
+    return;
 }
 
 //
@@ -163,11 +171,13 @@ fuseserver_setattr(fuse_req_t req, fuse_ino_t ino, struct stat *attr,
     }
     
     fuse_reply_attr(req, &st, 0);
+    return;
 #else
     fuse_reply_err(req, ENOSYS);
 #endif
   } else {
     fuse_reply_err(req, ENOSYS);
+    return
   }
 }
 
@@ -199,6 +209,7 @@ fuseserver_read(fuse_req_t req, fuse_ino_t ino, size_t size,
   }
   //tprintf("fuseserver_write, inum:%016llx, off:%ld,size:%ld, buf:%s\n", inu, off,size, buf.c_str());
   fuse_reply_buf(req, buf.data(), buf.size());
+  return
 #else
   fuse_reply_err(req, ENOSYS);
 #endif
@@ -233,8 +244,10 @@ fuseserver_write(fuse_req_t req, fuse_ino_t ino,
   //tprintf("fuseserver_write, inum:%016llx, off:%ld, size:%ld, buf:%s\n", inu, off,size, buf);
   if ((ret = yfs->write(inu, (int)off, (long)size, buf)) != yfs_client::OK) {
      fuse_reply_err(req, ENOSYS);
+     return;
   }  
   fuse_reply_write(req, size);
+  return;
 #else
   fuse_reply_err(req, ENOSYS);
 #endif
@@ -312,12 +325,17 @@ fuseserver_create(fuse_req_t req, fuse_ino_t parent, const char *name,
   yfs_client::status ret;
   if( (ret = fuseserver_createhelper( parent, name, mode, &e )) == yfs_client::OK ) {
     fuse_reply_create(req, &e, fi);
-  } else {
-		if (ret == yfs_client::EXIST) {
-			fuse_reply_err(req, EEXIST);
-		}else{
-			fuse_reply_err(req, ENOENT);
-		}
+  }
+  else
+  {
+    if (ret == yfs_client::EXIST)
+    {
+      fuse_reply_err(req, EEXIST);
+    }
+    else
+    {
+      fuse_reply_err(req, ENOENT);
+    }
   }
 }
 

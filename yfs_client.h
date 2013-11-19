@@ -79,6 +79,8 @@ class yfs_client {
   status unlink(inum inum_p, const char* name);
 
   status getattr(inum inu, extent_protocol::attr& a);
+  void acquire(inum inu);
+  void release(inum inu);
 
 };
 #endif 

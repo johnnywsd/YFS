@@ -682,6 +682,7 @@ release:
 yfs_client::status
 yfs_client::getattr(inum inu, extent_protocol::attr& a)
 {
+  lc->acquire(inu);
   yfs_client::status ret = yfs_client::OK;
   extent_protocol::status ret_1 = ec->getattr(inu, a);
   if(ret_1 == extent_protocol::OK)
@@ -690,7 +691,21 @@ yfs_client::getattr(inum inu, extent_protocol::attr& a)
   }
   else
   {
-    ret = yfs_client::IOERR;
+    ret = yfs_client::NOENT;
   }
+release:
+  lc->release(inu);
   return ret;
+}
+
+void
+yfs_cient::acquire(inum inu)
+{
+  lc->acquire(inum);
+}
+
+void
+yfs_client::release(inum inu)
+{
+  lc->release(inum);
 }
