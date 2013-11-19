@@ -182,8 +182,15 @@ extent_protocol::status
 extent_client::remove(extent_protocol::extentid_t eid)
 {
   extent_protocol::status ret = extent_protocol::OK;
-  int r;
-  ret = cl->call(extent_protocol::remove, eid, r); //remove in lab5
+  //int r; //removed in lab5
+  //ret = cl->call(extent_protocol::remove, eid, r); //remove in lab5
+
+  ScopedLock ml(&extent_cache_map_mutex);
+  dirty_set.insert(eid);
+  tprintf("extent_client::remove, REMOVED eid:%016llx\n", eid);
+  delete (extent_cache_map[eid]);
+  extent_cache_map.erase(eid);
+
   return ret;
 }
 
@@ -240,33 +247,34 @@ extent_client::flush(extent_protocol::extentid_t eid)
     {
       tprintf("extent_client::flush, is_dirty=true,\
           eid:%016llx\n", eid);
-      if ( !bean->is_removed )
-      {
-        tprintf("extent_client::flush, is_removed=false,\
-            eid:%016llx\n", eid);
-        ret = cl->call(extent_protocol::put, -1, bean->data, 0, r);
-      }
-      else
-      {
-        tprintf("extent_client::flush, is_removed=true,\
-            eid:%016llx\n", eid);
-        ret = cl->call(extent_protocol::remove, eid, r);
-      }
+      ret = cl->call(extent_protocol::put, -1, bean->data, 0, r);
     }
     else
     {
       tprintf("extent_client::flush, is_dirty=false,\
           eid:%016llx\n", eid);
-      delete(extent_cache_map[eid]);
-      extent_cache_map.erase(eid);
+      ret = extent_protocol::OK;
     }
+    delete(extent_cache_map[eid]);
+    extent_cache_map.erase(eid);
   }
   else
   {
     tprintf("extent_client::flush, NOT find it in cache,\
         eid:%016llx\n", eid);
-    //I am not sure
-    ret = cl->call(extent_protocol::remove, eid, r);
+    if ( dirty_set.find(eid) != dirty_set.end() )
+    {
+      // It must be deleted.
+      tprintf("extent_client::flush, NOT find it in cache, but it's in dirt_set,\
+        eid:%016llx\n", eid);
+      ret = cl->call(extent_protocol::remove, eid, r);
+      dirty_set.erase(eid);
+    }
+    else
+    {
+      tprintf("extent_client::flush, NOT find it in cache, and it's NOT in dirt_set,\
+        eid:%016llx\n", eid);
+    }
   }
   return ret;
 }
