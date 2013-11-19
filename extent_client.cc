@@ -247,7 +247,7 @@ extent_client::flush(extent_protocol::extentid_t eid)
     {
       tprintf("extent_client::flush, is_dirty=true,\
           eid:%016llx\n", eid);
-      ret = cl->call(extent_protocol::put, -1, bean->data, 0, r);
+      ret = cl->call(extent_protocol::put, eid, bean->data, 0, r);
     }
     else
     {
