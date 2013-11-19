@@ -254,7 +254,7 @@ fuseserver_createhelper(fuse_ino_t parent, const char *name,
 {
   printf("fusesever_createhelper, start!\n");
     // fuse_ino_t -> unsigned long
-  yfs_client::status ret;
+  yfs_client::status ret=0;
   yfs_client::status r;
   // In yfs, timeouts are always set to 0.0, and generations are always set to 0
   e->attr_timeout = 0.0;
