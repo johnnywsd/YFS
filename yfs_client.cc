@@ -234,7 +234,7 @@ yfs_client::readdir(inum inum_p,std::vector<dirent>& dir_entries)
 {
   //bool found = false;
   tprintf("yfs_client::readdir, before lc->acquire, inum_p:%016llx\n", inum_p);
-  lc->acquire(inum_p);
+  //lc->acquire(inum_p);
   tprintf("yfs_client::readdir\n");
   std::string buf;
   yfs_client::status r;
@@ -269,7 +269,7 @@ yfs_client::readdir(inum inum_p,std::vector<dirent>& dir_entries)
     goto release;
   }
 release:
-  lc->release(inum_p);
+  //lc->release(inum_p);
   tprintf("yfs_client::readdir RELEASED:%016llx \n", inum_p); 
   return r;
 }

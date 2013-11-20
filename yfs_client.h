@@ -55,9 +55,9 @@ class yfs_client {
   static inum n2i(std::string);
   static inum generate_inum(bool is_file);
   static inum generate_inum(bool is_file, inum inum_p);
-  status createfile_helper(inum inum_p, const char* name, inum& inum_c, bool isfile);
  public:
 
+  status createfile_helper(inum inum_p, const char* name, inum& inum_c, bool isfile);
   yfs_client(std::string, std::string);
 
   bool isfile(inum);

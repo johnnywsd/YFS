@@ -310,6 +310,7 @@ yfs_client::status
 fuseserver_createhelper(fuse_ino_t parent, const char *name,
                         mode_t mode, struct fuse_entry_param *e)
 {
+  bool child_lock = false;
   yfs_client::inum inum_p = parent;
   yfs->acquire(inum_p);
 
@@ -329,7 +330,8 @@ fuseserver_createhelper(fuse_ino_t parent, const char *name,
   tprintf("fusesever_createhelper, before yfs->createfile,"
       "parent: %016lx, filename %s, inum_c:%016llx", 
           parent, name, inum_c);
-  r = yfs->createfile(inum_p, name, inum_c); 
+  //r = yfs->createfile(inum_p, name, inum_c); 
+  r = yfs->createfile_helper(inum_p, name, inum_c, true); 
 
   tprintf("fusesever_createhelper yfs->createfile,"
       "parent: %016lx, filename %s, inum_c:%016llx, RETURN %d\n",
@@ -340,7 +342,11 @@ fuseserver_createhelper(fuse_ino_t parent, const char *name,
      tprintf("fusesever_createhelper before yfs->getattr,"
          " parent: %016lx, filename %s, inum_c:%016llx \n",
           parent, name, inum_c);
+     
+     yfs->acquire(inum_c);
+     child_lock = true;
      ret = getattr(inum_c, st);
+
      tprintf("fusesever_createhelper yfs->getattr,"
          " parent: %016lx, filename %s, inum_c:%016llx, RETURN %d\n",
           parent, name, inum_c, ret);
@@ -354,6 +360,10 @@ fuseserver_createhelper(fuse_ino_t parent, const char *name,
   }
 release:
   yfs->release(inum_p);
+  if (child_lock)
+  {
+    yfs->release(inum_c);
+  }
   return r;
 }
 
@@ -425,9 +435,9 @@ fuseserver_lookup(fuse_req_t req, fuse_ino_t parent, const char *name)
     struct stat st;
     e.ino = inum_c;
     yfs->acquire(inum_c);
+    found = true;
     if(getattr(inum_c, st) == yfs_client::OK)
       e.attr = st;
-    found = true;
   }
   if (found)
   {
@@ -489,12 +499,15 @@ fuseserver_readdir(fuse_req_t req, fuse_ino_t ino, size_t size,
                    off_t off, struct fuse_file_info *fi)
 {
   yfs_client::inum inum = ino; // req->in.h.nodeid;
+  yfs->acquire(inum);
   struct dirbuf b;
 
   tprintf("fuseserver_readdir\n");
 
   if(!yfs->isdir(inum)){
     fuse_reply_err(req, ENOTDIR);
+    
+    yfs->release(inum);
     return;
   }
 
@@ -514,6 +527,10 @@ fuseserver_readdir(fuse_req_t req, fuse_ino_t ino, size_t size,
   
   reply_buf_limited(req, b.p, b.size, off, size);
   free(b.p);
+//release:
+
+  yfs->release(inum);
+  return;
 }
 
 
@@ -521,7 +538,11 @@ void
 fuseserver_open(fuse_req_t req, fuse_ino_t ino,
      struct fuse_file_info *fi)
 {
+
+  //yfs_client::inum inu = ino;
+  //yfs->acquire(inu);
   fuse_reply_open(req, fi);
+  //yfs->release(inu);
 }
 
 //
@@ -549,37 +570,56 @@ fuseserver_mkdir(fuse_req_t req, fuse_ino_t parent, const char *name,
   // You fill this in for Lab 3
 #if 1
   
+  bool child_lock = false;
   yfs_client::inum inum_p = parent; // req->in.h.nodeid;
+  yfs->acquire(inum_p);
+
   yfs_client::inum inum_c = 0; 
   yfs_client::status ret;
   tprintf("fuseserver_mkdir parent:%016lx name:%s, start \n", parent, name); 
-  ret = yfs->mkdir(inum_p, name, inum_c);
+  //ret = yfs->mkdir(inum_p, name, inum_c);
+  ret = yfs->createfile_helper(inum_p, name, inum_c, false);
   tprintf("fuseserver_mkdir parent:%016lx name:%s, yfs->mkdir pass \n", parent, name); 
   if (ret == yfs_client::OK) {
       tprintf("fuseserver_mkdir parent:%016lx name:%s, inum_c:%016llx  , yfs->mkdir pass, return  OK \n", parent, name,inum_c); 
     struct stat st;
     e.ino = inum_c;
+
+    yfs->acquire(inum_c);
+    child_lock = true;
+
     ret = getattr(inum_c, st);
     if(ret == yfs_client::OK)
     {
       tprintf("fuseserver_mkdir getattr,inum_c:%016llx , return  OK \n", inum_c); 
       e.attr = st;
       fuse_reply_entry(req, &e);
+      goto release;
     }
     else
     {
         tprintf("fuseserver_mkdir getattr,inum_c:%016llx , return %d \n", inum_c, ret); 
         fuse_reply_err(req, ENOSYS);
+        goto release;
     }
   }
   else if (ret == yfs_client::EXIST)
   {
     fuse_reply_err(req, EEXIST);
+    goto release;
   }
   else
   {
     fuse_reply_err(req, ENOENT);
+    goto release;
   }
+release:
+  yfs->release(inum_p);
+  if (child_lock)
+  {
+    yfs->release(inum_c);
+  }
+  return;
 #else
   fuse_reply_err(req, ENOSYS);
 #endif
@@ -620,6 +660,7 @@ fuseserver_unlink(fuse_req_t req, fuse_ino_t parent, const char *name)
   }
 release:
   yfs->release(inum_p);
+  return;
 }
 
 void
