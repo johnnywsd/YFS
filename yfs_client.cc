@@ -176,7 +176,7 @@ yfs_client::status
 yfs_client::lookup(inum inum_p, const char* name, inum &inum_c)
 {
   tprintf("yfs_client::lookup, before lc-acquire, inum_p:%016llx\n", inum_p );
-  lc->acquire(inum_p);
+  //lc->acquire(inum_p);
   std::string buf;
   tprintf("yfs_client::lookup\n" );
   extent_protocol::status flag_get = ec->get(inum_p,0,SIZE_MAX, buf) ;
@@ -223,7 +223,7 @@ yfs_client::lookup(inum inum_p, const char* name, inum &inum_c)
   }
 
 release:
-  lc->release(inum_p);
+  //lc->release(inum_p);
   tprintf("yfs_client::lookup, RELEASED %016llx\n", inum_p);
   return r;
 }
@@ -232,7 +232,7 @@ release:
 yfs_client::status 
 yfs_client::readdir(inum inum_p,std::vector<dirent>& dir_entries)
 {
-  bool found = false;
+  //bool found = false;
   tprintf("yfs_client::readdir, before lc->acquire, inum_p:%016llx\n", inum_p);
   lc->acquire(inum_p);
   tprintf("yfs_client::readdir\n");
@@ -279,7 +279,7 @@ yfs_client::status
 yfs_client::createfile_helper(inum inum_p, const char* name, inum& inum_c, bool is_file)
 { 
     tprintf("yfs_cient::createfile_helper, before acquire inum_p:%016llx, name%s\n", inum_p, name);
-    lc->acquire(inum_p);
+    //lc->acquire(inum_p);
     tprintf("yfs_cient::createfile_helper, ACQUIRE inum_p:%016llx\n", inum_p);
     yfs_client::status r;
     bool flag_file_found = false;
@@ -393,7 +393,7 @@ release:
         lc->release(inum_c);
         tprintf("yfs_client::createfile_helper, RELEASED! inum_c: %016llx\n, name:%s",inum_c, name);
     }
-    lc->release(inum_p);
+    //lc->release(inum_p);
     tprintf("yfs_client::createfile_helper RELEASED, inum_p: %016llx \n", inum_p); 
     return r;
 }
@@ -576,7 +576,7 @@ yfs_client::status
 yfs_client::unlink(inum inum_p, const char* name)
 {
     tprintf("yfs_client::unlink,before lc->acqurie, parent: %016llx, name:%s, start\n", inum_p, name);
-    lc->acquire(inum_p);
+    //lc->acquire(inum_p);
     yfs_client::status ret;
     extent_protocol::status e_ret;
     
@@ -674,7 +674,7 @@ release:
         lc->release(target_inum);
         tprintf("yfs_client::unlink RELEASED,,target_inum:%016llx \n", target_inum);
     }
-    lc->release(inum_p);
+    //lc->release(inum_p);
     tprintf("yfs_client::unlink RELEASED,parent_inum:%016llx \n", inum_p);
     return ret;
 }

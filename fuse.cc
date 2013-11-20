@@ -216,7 +216,7 @@ fuseserver_read(fuse_req_t req, fuse_ino_t ino, size_t size,
   // You fill this in for Lab 2
 #if 1 
   yfs_client::inum inu = ino;
-  ysf->acquire(inu);
+  yfs->acquire(inu);
 
   std::string buf;
   // Change the above "#if 0" to "#if 1", and your code goes here
@@ -352,6 +352,8 @@ fuseserver_createhelper(fuse_ino_t parent, const char *name,
   {
     tprintf("fusesever_createhelper parent %016lx filename %s,inum_c:%016llx, create FAIL!, RETURN %d\n", parent, name, inum_c, r);
   }
+release:
+  yfs->release(inum_p);
   return r;
 }
 
@@ -413,6 +415,8 @@ fuseserver_lookup(fuse_req_t req, fuse_ino_t parent, const char *name)
   // I have already done. Shouda
   yfs_client::inum inum_p = parent; // req->in.h.nodeid;
   yfs_client::inum inum_c; 
+  yfs->acquire(inum_p);
+
   yfs_client::status ret;
   //tprintf("fuseserver_lookup parent:%016llx name:%s, start \n", parent, name); 
   ret = yfs->lookup(inum_p, name, inum_c);
@@ -420,6 +424,7 @@ fuseserver_lookup(fuse_req_t req, fuse_ino_t parent, const char *name)
   if (ret == yfs_client::OK) {
     struct stat st;
     e.ino = inum_c;
+    yfs->acquire(inum_c);
     if(getattr(inum_c, st) == yfs_client::OK)
       e.attr = st;
     found = true;
@@ -434,6 +439,13 @@ fuseserver_lookup(fuse_req_t req, fuse_ino_t parent, const char *name)
     tprintf("fuseserver_lookup parent:%016lx name:%s, NOT Found\n", parent, name); 
     fuse_reply_err(req, ENOENT);
   }
+release:
+  yfs->release(inum_p);
+  if (found)
+  {
+    yfs->release(inum_c);
+  }
+  return;
 }
 
 struct dirbuf {
@@ -587,9 +599,10 @@ fuseserver_unlink(fuse_req_t req, fuse_ino_t parent, const char *name)
   // You fill this in for Lab 3
   // Success:	fuse_reply_err(req, 0);
   // Not found:	fuse_reply_err(req, ENOENT);
+  yfs_client::inum inum_p = parent;
+  yfs->acquire(inum_p);
   tprintf("fuseserver_unlink parent:%016lx name:%s, start \n", parent, name); 
   yfs_client::status ret;
-  yfs_client::inum inum_p = parent;
   ret = yfs->unlink(inum_p, name);
   tprintf("fuseserver_unlink parent:%016lx name:%s, RETURN %d \n", parent, name, ret); 
 
@@ -605,6 +618,8 @@ fuseserver_unlink(fuse_req_t req, fuse_ino_t parent, const char *name)
   {
       fuse_reply_err(req, ENOSYS);
   }
+release:
+  yfs->release(inum_p);
 }
 
 void

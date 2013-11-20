@@ -92,7 +92,7 @@ lock_server::release(int clt, lock_protocol::lockid_t lid, int &r){
 	std::map<lock_protocol::lockid_t, int>::iterator flag= lock_map.find(lid);
 	// std::map<lock_protocol::lockid_t, pthread_cond_t*>::iterator flag_cond = cond_map.find(lid);
     
-    pthread_cond_t* p_cond;
+    //pthread_cond_t* p_cond;
 	if(flag != lock_map.end())
 	{//Found
 
