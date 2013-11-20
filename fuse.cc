@@ -43,7 +43,7 @@ getattr(yfs_client::inum inum, struct stat &st)
 {
   yfs_client::status ret;
 
-  //lc->acquire(inum);
+  //yfs->acquire(inum);
 
   bzero(&st, sizeof(st));
 
@@ -86,7 +86,7 @@ getattr(yfs_client::inum inum, struct stat &st)
    ret = yfs_client::OK;
 
 release:
-   //lc-release(inum);
+   //yfs->release(inum);
    return ret;
 }
 
@@ -109,9 +109,12 @@ void
 fuseserver_getattr(fuse_req_t req, fuse_ino_t ino,
                    struct fuse_file_info *fi)
 {
-    struct stat st;
     yfs_client::inum inum = ino; // req->in.h.nodeid;
+    yfs->acquire(inum);
+
+    struct stat st;
     yfs_client::status ret;
+
 
     ret = getattr(inum, st);
     if(ret != yfs_client::OK){
@@ -121,6 +124,8 @@ fuseserver_getattr(fuse_req_t req, fuse_ino_t ino,
     {
       fuse_reply_attr(req, &st, 0);
     }
+release:
+    yfs->release(inum);
     return;
 }
 
@@ -141,6 +146,10 @@ void
 fuseserver_setattr(fuse_req_t req, fuse_ino_t ino, struct stat *attr,
                    int to_set, struct fuse_file_info *fi)
 {
+  yfs_client::inum inum = ino; // req->in.h.nodeid;
+  yfs->acquire(inum);
+
+
   tprintf("fuseserver_setattr 0x%x\n", to_set);
   if (FUSE_SET_ATTR_SIZE & to_set) {
     tprintf("   fuseserver_setattr set size to %zu\n", attr->st_size);
@@ -152,8 +161,8 @@ fuseserver_setattr(fuse_req_t req, fuse_ino_t ino, struct stat *attr,
     // Note: fill st using getattr before fuse_reply_attr
     memset(&st, 0, sizeof(st));
     
-    yfs_client::inum inum = ino; // req->in.h.nodeid;
     yfs_client::fileinfo finfo; // req->in.h.nodeid;
+
 
     finfo.size = attr->st_size;
     yfs_client::status ret;
@@ -161,24 +170,31 @@ fuseserver_setattr(fuse_req_t req, fuse_ino_t ino, struct stat *attr,
     ret = yfs->setattr(inum, finfo);
     if(ret != yfs_client::OK){
       fuse_reply_err(req, ENOENT);
-      return;
+      //return;
+      goto release;
     }
 
     ret = getattr(inum, st);
     if(ret != yfs_client::OK){
       fuse_reply_err(req, ENOENT);
-      return;
+      //return;
+      goto release;
     }
     
     fuse_reply_attr(req, &st, 0);
-    return;
+    //return;
+    goto release;
 #else
     fuse_reply_err(req, ENOSYS);
 #endif
   } else {
     fuse_reply_err(req, ENOSYS);
-    return
+    //return;
+    goto release;
   }
+release:
+    yfs->release(inum);
+    return;
 }
 
 //
@@ -199,17 +215,27 @@ fuseserver_read(fuse_req_t req, fuse_ino_t ino, size_t size,
 {
   // You fill this in for Lab 2
 #if 1 
+  yfs_client::inum inu = ino;
+  ysf->acquire(inu);
+
   std::string buf;
   // Change the above "#if 0" to "#if 1", and your code goes here
-  yfs_client::inum inu = ino;
+  
   yfs_client::status ret;
   if ((ret = yfs->read(inu, (int)off, (long)size, buf)) != yfs_client::OK){
      fuse_reply_err(req, ENOSYS);
-     return;
+     goto release;
+     //return;
   }
-  //tprintf("fuseserver_write, inum:%016llx, off:%ld,size:%ld, buf:%s\n", inu, off,size, buf.c_str());
-  fuse_reply_buf(req, buf.data(), buf.size());
-  return
+  else{
+    fuse_reply_buf(req, buf.data(), buf.size());
+  }
+  //return;
+  goto release;
+
+release:
+  yfs->release(inu);
+  return;
 #else
   fuse_reply_err(req, ENOSYS);
 #endif
@@ -239,14 +265,23 @@ fuseserver_write(fuse_req_t req, fuse_ino_t ino,
 #if 1
   // Change the above line to "#if 1", and your code goes here
   yfs_client::inum inu = ino;
+  yfs->acquire(inu);
+
   yfs_client::status ret;
   //tprintf("fuseserver_write, inum:%016llx, off:%ld, size:%lld, buf:%s\n", inu, off,size, buf);
   //tprintf("fuseserver_write, inum:%016llx, off:%ld, size:%ld, buf:%s\n", inu, off,size, buf);
   if ((ret = yfs->write(inu, (int)off, (long)size, buf)) != yfs_client::OK) {
      fuse_reply_err(req, ENOSYS);
-     return;
-  }  
-  fuse_reply_write(req, size);
+     //return;
+     goto release;
+  }
+  else
+  {
+    fuse_reply_write(req, size);
+    goto release;
+  }
+release:
+  yfs->release(inu);
   return;
 #else
   fuse_reply_err(req, ENOSYS);

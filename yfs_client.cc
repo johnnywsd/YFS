@@ -484,7 +484,7 @@ yfs_client::setattr(inum inum, fileinfo& finfo)
 {
   //int r = OK;
   tprintf("yfs_client::setattr, before lc->acqurie, inum:%016llx\n", inum);
-  lc->acquire(inum);
+  //lc->acquire(inum);
   std::string file_buf;
   yfs_client::status r;
   tprintf("yfs_client::setattr %016llx, finfo.size %lld \n", inum, finfo.size);
@@ -513,7 +513,7 @@ yfs_client::setattr(inum inum, fileinfo& finfo)
   r = yfs_client::OK; 
 
 release:
-  lc->release(inum);
+  //lc->release(inum);
   tprintf("yfs_client::setattr RELEASED,%016llx \n", inum);
   return r;
 }
@@ -522,7 +522,7 @@ yfs_client::status
 yfs_client::read(inum inu, int offset, long size, std::string &buf)
 {
    tprintf("yfs_client::read, before lc->acqurie, inu:%016llx\n", inu);
-   lc->acquire(inu);
+   //lc->acquire(inu);
    yfs_client::status r;
    tprintf("yfs_client::read %016llx, off %d size %ld \n",
            inu, (int)offset, (long)size);
@@ -540,7 +540,7 @@ yfs_client::read(inum inu, int offset, long size, std::string &buf)
    goto release;
 
 release:
-   lc->release(inu);
+   //lc->release(inu);
    tprintf("yfs_client::read RELEASED,%016llx \n", inu);
    return r;
 }
@@ -549,7 +549,7 @@ yfs_client::status
 yfs_client::write(inum inu, int offset, long size, const char* buf)
 {
    tprintf("yfs_client::write, BEGIN, %016llx off:%d size:%ld, buf:%s \n", inu, (int)offset, (long)size, buf);   
-   lc->acquire(inu);
+   //lc->acquire(inu);
 
    yfs_client::status r;
    std::string buf_f;
@@ -567,7 +567,7 @@ yfs_client::write(inum inu, int offset, long size, const char* buf)
    goto release;
 
 release:
-   lc->release(inu);
+   //lc->release(inu);
    tprintf("yfs_client::write RELEASED,%016llx \n", inu);
    return r;
 }
@@ -682,7 +682,7 @@ release:
 yfs_client::status
 yfs_client::getattr(inum inu, extent_protocol::attr& a)
 {
-  lc->acquire(inu);
+  //lc->acquire(inu);
   yfs_client::status ret = yfs_client::OK;
   extent_protocol::status ret_1 = ec->getattr(inu, a);
   if(ret_1 == extent_protocol::OK)
@@ -694,18 +694,18 @@ yfs_client::getattr(inum inu, extent_protocol::attr& a)
     ret = yfs_client::NOENT;
   }
 release:
-  lc->release(inu);
+  //lc->release(inu);
   return ret;
 }
 
 void
-yfs_cient::acquire(inum inu)
+yfs_client::acquire(inum inu)
 {
-  lc->acquire(inum);
+  lc->acquire(inu);
 }
 
 void
 yfs_client::release(inum inu)
 {
-  lc->release(inum);
+  lc->release(inu);
 }
