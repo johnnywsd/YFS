@@ -75,6 +75,7 @@ lock_server_cache::~lock_server_cache()
 int lock_server_cache::acquire(lock_protocol::lockid_t lid, std::string id, 
                                int &)
 {
+  pthread_mutex_lock(&lock_map_mutex);
   lock_protocol::status ret = lock_protocol::OK;
   lock_cache_bean* lcb;
   lcb = get_lock_bean(lid);
