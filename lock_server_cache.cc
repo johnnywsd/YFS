@@ -158,8 +158,8 @@ lock_server_cache::release(
         pthread_cond_signal(&retry_cond);
     }
     pthread_mutex_unlock(&lock_map_mutex);
-    tprintf("lock_server_cache::release, Released, id:%s, lid:%016llx, status:%d\n ",
-            id.c_str(), lid, lcb->status);
+    tprintf("lock_server_cache::release, Released, let next waiter retry"
+        "id:%s, lid:%016llx, status:%d\n ", id.c_str(), lid, lcb->status);
     return ret;
 }
 
