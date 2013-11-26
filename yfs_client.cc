@@ -327,7 +327,10 @@ yfs_client::createfile_helper(inum inum_p, const char* name, inum& inum_c, bool 
 
             //inum new_inum = generate_inum(is_file); 
 
-            inum new_inum = generate_inum(is_file, inum_p); 
+            inum new_inum; 
+            do{
+              new_inum = generate_inum(is_file, inum_p); 
+            }while(exist(new_inum));
 
             inum_c = new_inum;
             tprintf("yfs_client::createfile_helper, before acquire, inum_c:%016llx\n, name:%s",inum_c,name);
@@ -696,6 +699,16 @@ yfs_client::getattr(inum inu, extent_protocol::attr& a)
 release:
   //lc->release(inu);
   return ret;
+}
+
+bool yfs_client::exist(inum inu){
+  int ret = 0;
+  ec->exist(inu,ret);
+  if(ret == 0){
+
+    return false;
+  }
+  else return true;
 }
 
 void
