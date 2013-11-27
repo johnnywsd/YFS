@@ -24,6 +24,7 @@ handle::safebind()
   rpcc *cl = new rpcc(dstsock);
   tprintf("handler_mgr::get_handle trying to bind...%s\n", h->m.c_str());
   int ret;
+
   // Starting with lab 6, our test script assumes that the failure
   // can be detected by paxos and rsm layer within few seconds. We have
   // to set the timeout with a small value to support the assumption.
@@ -32,6 +33,11 @@ handle::safebind()
   // lab 6 and lab 7 because the rpc layer may delay your RPC request, 
   // and cause a time out failure. Please make sure RPC_LOSSY is set to 0.
   ret = cl->bind(rpcc::to(1000));
+
+
+  // handle class has to tolerate lossy network, since we may test
+  // students' lab with RPC_LOSSY=5 from lab 1 to lab 5
+  //ret = cl->bind();
   if (ret < 0) {
     tprintf("handle_mgr::get_handle bind failure! %s %d\n", h->m.c_str(), ret);
     delete cl;
