@@ -647,6 +647,8 @@ fuseserver_unlink(fuse_req_t req, fuse_ino_t parent, const char *name)
   ret = yfs->unlink(inum_p, name);
   tprintf("fuseserver_unlink parent:%016lx name:%s, RETURN %d \n", parent, name, ret); 
 
+release:
+  yfs->release(inum_p);
   if(ret == yfs_client::OK)
   {
       fuse_reply_err(req, 0);
@@ -659,8 +661,6 @@ fuseserver_unlink(fuse_req_t req, fuse_ino_t parent, const char *name)
   {
       fuse_reply_err(req, ENOSYS);
   }
-release:
-  yfs->release(inum_p);
   return;
 }
 
