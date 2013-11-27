@@ -80,6 +80,9 @@ lock_client_cache::get_lock_bean(lock_protocol::lockid_t lid)
         flag_3 = pthread_cond_init(&ret->revoke_cond,NULL);
         ret->status = NONE;
         lock_map[lid] = ret;
+        VERIFY (flag_1 == 0);
+        VERIFY (flag_2 == 0);
+        VERIFY (flag_3 == 0);
     }
     pthread_mutex_unlock(&lock_map_mutex);
     return ret;
@@ -101,11 +104,9 @@ lock_client_cache::acquire(lock_protocol::lockid_t lid)
     {
         if (lcb->status == NONE)
         {
-            //tprintf("lock_client_cache::acquire lcb->status == NONE, lid:%016llx\n", lid);
             lcb->status = ACQUIRING;
             ret = cl->call(lock_protocol::acquire, lid, id, r);
 
-            //tprintf("lock_client_cache::acquire ret:%d\n", ret);
             if (ret == lock_protocol::OK )
             {
                 lcb->status = LOCKED;
@@ -116,6 +117,7 @@ lock_client_cache::acquire(lock_protocol::lockid_t lid)
             {
                 tprintf("lock_client_cache::acquire wait, id:%s. lid:%016llx\n",
                     id.c_str(), lid);
+                lcb->status = ACQUIRING;
                 pthread_cond_wait(&lcb->lock_cond, &lcb->lock_mutex);
                 if (lcb->status == FREE)
                 {
@@ -138,13 +140,9 @@ lock_client_cache::acquire(lock_protocol::lockid_t lid)
         else
         {
             //It should be RELEASING
-            //
-            //tprintf("lock_client_cache::acquire else, lid:%016llx, status:%d\n",
-                    //lid, lcb->status);
             tprintf("lock_client_cache::acquire wait2, id:%s. lid:%016llx\n",
                 id.c_str(), lid);
             pthread_cond_wait(&lcb->lock_cond, &lcb->lock_mutex);
-            //tprintf("lock_client_cache::acquire else,after wait, lid:%016llx", lid);
             if (lcb->status == FREE)
             {
                 lcb->status = LOCKED;
@@ -161,7 +159,8 @@ lock_client_cache::acquire(lock_protocol::lockid_t lid)
     //tprintf("lock_client_cache::acquire END\n");
     if (acquire_succeed)
     {
-        tprintf("lock_client_cache::acquire, Acquired, id:%s,\t, lid:%016llx\n", id.c_str(), lid);
+        tprintf("lock_client_cache::acquire, Acquired,"
+            " id:%s,\t, lid:%016llx\n", id.c_str(), lid);
     }
     return lock_protocol::OK;
 
@@ -176,35 +175,38 @@ lock_client_cache::release(lock_protocol::lockid_t lid)
     pthread_mutex_lock(&lcb->lock_mutex);
     if (lcb->status == LOCKED)
     {
-        //tprintf("lock_client_cache::release lcb->status==LOCKED, lid:%016llx\n",lid);
-        tprintf("lock_client_cache::release lcb->status==LOCKED, id%s,\t lid:%016llx\n",id.c_str(), lid);
+        tprintf("lock_client_cache::release lcb->status==LOCKED,"
+            " id%s,\t lid:%016llx\n",id.c_str(), lid);
         lcb->status = FREE;
         release_succeed = true;
+        pthread_mutex_unlock(&lcb->lock_mutex);
         pthread_cond_signal(&lcb->lock_cond);
     }
     else if (lcb->status == RELEASING)
     {
-        tprintf("lock_client_cache::release lcb->status==RELEASING,id%s,\t lid:%016llx\n",id.c_str(), lid);
+        tprintf("lock_client_cache::release lcb->status==RELEASING, "
+            "id%s,\t lid:%016llx\n",id.c_str(), lid);
+        pthread_mutex_unlock(&lcb->lock_mutex);
         pthread_cond_signal(&lcb->revoke_cond);
     }
     else
     {
+        pthread_mutex_unlock(&lcb->lock_mutex);
         tprintf("Status unknown: %d\n", lcb->status);
     }
-    pthread_mutex_unlock(&lcb->lock_mutex);
 
-    //tprintf("lock_client_cache::release END,lid:%016llx, status:%d\n",
-            //lid, lcb->status);
     if (release_succeed)
     {
-        tprintf("lock_client_cache::release, Released, id:%s,\t lid:%016llx\n", id.c_str(), lid);
+        tprintf("lock_client_cache::release, Released, "
+            "id:%s,\t lid:%016llx\n", id.c_str(), lid);
     }
     else
     {
-        tprintf("lock_client_cache::release, NOT release, id:%s,\t lid:%016llx, "
-                "status:%d\n",
-                id.c_str(), lid, lcb->status);
+        tprintf("lock_client_cache::release, NOT release, "
+            "id:%s,\t lid:%016llx, status:%d\n",
+            id.c_str(), lid, lcb->status);
     }
+
     return lock_protocol::OK;
 }
 
@@ -215,8 +217,8 @@ lock_client_cache::revoke_handler(lock_protocol::lockid_t lid,
     int ret = rlock_protocol::OK;
     pthread_mutex_lock(&release_mutex);
     revoke_list.push_back(lid);
-    pthread_cond_signal(&release_cond);
     pthread_mutex_unlock(&release_mutex);
+    pthread_cond_signal(&release_cond);
     return ret;
 }
 
@@ -227,8 +229,8 @@ lock_client_cache::retry_handler(lock_protocol::lockid_t lid,
     int ret = rlock_protocol::OK;
     pthread_mutex_lock(&retry_mutex);
     retry_list.push_back(lid);
-    pthread_cond_signal(&retry_cond);
     pthread_mutex_unlock(&retry_mutex);
+    pthread_cond_signal(&retry_cond);
     return ret;
 }
 
@@ -254,14 +256,21 @@ lock_client_cache::release_loop(void)
             {
                 lcb->status = RELEASING;
                 pthread_cond_wait(&lcb->revoke_cond,&lcb->lock_mutex);
-                tprintf("lock_client_cache::release_loop, in while, got lcb->revoke_cond,"
-                        "id%s,\t lid:%016llx, status:%d\n", id.c_str(), lid, lcb->status);
+                tprintf("lock_client_cache::release_loop,"
+                    "in while, got lcb->revoke_cond,"
+                    "id%s,\t lid:%016llx, status:%d\n", id.c_str(), lid, lcb->status);
+            }
+            else
+            {
+              assert(lcb->status == FREE);
             }
 
             //Call release
-            tprintf("lock_client_cache::release_loop, cl->call(release..),call flush "
-                        "id:%s, lid:%016llx, status:%d\n",
-                        id.c_str(), lid, lcb->status);
+            tprintf("lock_client_cache::release_loop, "
+                "cl->call(release..),call flush "
+                "id:%s, lid:%016llx, status:%d\n",
+                id.c_str(), lid, lcb->status);
+
             if( lu!= NULL )
               lu->dorelease(lid);
             else
@@ -272,15 +281,18 @@ lock_client_cache::release_loop(void)
             if (ret == lock_protocol::OK)
             {
                 lcb->status = NONE;
+                pthread_mutex_unlock(&lcb->lock_mutex);
                 pthread_cond_signal(&lcb->lock_cond);
                 tprintf("lock_client_cache::release_loop, Revoked,"
-                        "id%s,\t lid:%016llx, status:%d\n", id.c_str(), lid, lcb->status);
+                        "id%s,\t lid:%016llx, status:%d\n",
+                        id.c_str(), lid, lcb->status);
             }
             else
             {
-                tprintf("lock_client_cache::release_loop, FAILED, ret:%d\n", ret);
+                pthread_mutex_unlock(&lcb->lock_mutex);
+                tprintf("lock_client_cache::release_loop, FAILED,"
+                    "ret:%d\n", ret);
             }
-            pthread_mutex_unlock(&lcb->lock_mutex);
         }
         pthread_mutex_unlock(&release_mutex);
     }
@@ -304,14 +316,16 @@ lock_client_cache::retry_loop(void)
             ret = cl->call(lock_protocol::acquire, lid, id, r);
             if (ret == lock_protocol::OK)
             {
+                assert(lcb->status == ACQUIRING);
                 lcb->status = FREE;
+                pthread_mutex_unlock(&lcb->lock_mutex);
                 pthread_cond_signal(&lcb->lock_cond);
             }
             else
             {
+                pthread_mutex_unlock(&lcb->lock_mutex);
                 tprintf("lock_client_cache::retry_loop, FAILED, ret:%d\n", ret);
             }
-            pthread_mutex_unlock(&lcb->lock_mutex);
         }
         pthread_mutex_unlock(&retry_mutex);
     }

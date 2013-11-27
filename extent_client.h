@@ -48,6 +48,7 @@ class extent_client {
   extent_protocol::status 
     remove(extent_protocol::extentid_t eid);
 
+  bool exist(extent_protocol::extentid_t eid, int& is_exist);
 };
 
 #endif 

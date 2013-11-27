@@ -284,4 +284,20 @@ extent_client::flush(extent_protocol::extentid_t eid)
   return ret;
 }
 
-
+bool
+extent_client::exist(extent_protocol::extentid_t eid, int& is_exist)
+{
+  ScopedLock ml(&extent_cache_map_mutex);
+  extent_protocol::status ret = extent_protocol::OK;
+  if(extent_cache_map.find(eid) != extent_cache_map.end() ){
+    is_exist = true;
+  }
+  else if(extent_cache_map.find(eid) == extent_cache_map.end() 
+      && dirty_set.find(eid) != dirty_set.end() ){
+    is_exist = false;
+  }
+  else{
+    ret = cl->call(extent_protocol::exist, eid, is_exist);
+  }
+  return ret;
+}

@@ -82,5 +82,6 @@ class yfs_client {
   void acquire(inum inu);
   void release(inum inu);
 
+  bool exist(inum inu);
 };
 #endif 

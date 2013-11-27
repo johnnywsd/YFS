@@ -177,3 +177,11 @@ int extent_server::remove(extent_protocol::extentid_t id, int &)
   return extent_protocol::IOERR;
 }
 
+int 
+extent_server::exist(extent_protocol::extentid_t id, int& is_exist){
+  if(extent_storage.find(id) == extent_storage.end()){
+    is_exist = 0;
+  }
+  else is_exist = 1;
+  return extent_protocol::OK;
+}
