@@ -117,6 +117,7 @@ fuseserver_getattr(fuse_req_t req, fuse_ino_t ino,
 
 
     ret = getattr(inum, st);
+    yfs->release(inum);
     if(ret != yfs_client::OK){
       fuse_reply_err(req, ENOENT);
     }
@@ -124,8 +125,6 @@ fuseserver_getattr(fuse_req_t req, fuse_ino_t ino,
     {
       fuse_reply_attr(req, &st, 0);
     }
-release:
-    yfs->release(inum);
     return;
 }
 
@@ -171,31 +170,29 @@ fuseserver_setattr(fuse_req_t req, fuse_ino_t ino, struct stat *attr,
     ret = yfs->setattr(inum, finfo);
     if(ret != yfs_client::OK){
       fuse_reply_err(req, ENOENT);
-      //return;
-      goto release;
+      return;
+      //goto release;
     }
 
     ret = getattr(inum, st);
+    yfs->release(inum);
     if(ret != yfs_client::OK){
       fuse_reply_err(req, ENOENT);
-      //return;
-      goto release;
+      return;
+      //goto release;
     }
     
     fuse_reply_attr(req, &st, 0);
-    //return;
-    goto release;
+    return;
+    //goto release;
 #else
     fuse_reply_err(req, ENOSYS);
 #endif
   } else {
     fuse_reply_err(req, ENOSYS);
-    //return;
-    goto release;
-  }
-release:
-    yfs->release(inum);
     return;
+    //goto release;
+  }
 }
 
 //
@@ -223,20 +220,18 @@ fuseserver_read(fuse_req_t req, fuse_ino_t ino, size_t size,
   // Change the above "#if 0" to "#if 1", and your code goes here
   
   yfs_client::status ret;
-  if ((ret = yfs->read(inu, (int)off, (long)size, buf)) != yfs_client::OK){
+  ret = yfs->read(inu, (int)off, (long)size, buf);
+  yfs->release(inu);
+  if ( ret != yfs_client::OK){
      fuse_reply_err(req, ENOSYS);
-     goto release;
-     //return;
+     //goto release;
+     return;
   }
   else{
     fuse_reply_buf(req, buf.data(), buf.size());
   }
-  //return;
-  goto release;
-
-release:
-  yfs->release(inu);
   return;
+
 #else
   fuse_reply_err(req, ENOSYS);
 #endif
@@ -271,19 +266,19 @@ fuseserver_write(fuse_req_t req, fuse_ino_t ino,
   yfs_client::status ret;
   //tprintf("fuseserver_write, inum:%016llx, off:%ld, size:%lld, buf:%s\n", inu, off,size, buf);
   //tprintf("fuseserver_write, inum:%016llx, off:%ld, size:%ld, buf:%s\n", inu, off,size, buf);
-  if ((ret = yfs->write(inu, (int)off, (long)size, buf)) != yfs_client::OK) {
+  ret = yfs->write(inu, (int)off, (long)size, buf);
+  yfs->release(inu);
+  if ( ret != yfs_client::OK) {
      fuse_reply_err(req, ENOSYS);
-     //return;
-     goto release;
+     return;
+     //goto release;
   }
   else
   {
     fuse_reply_write(req, size);
-    goto release;
+    return;
+    //goto release;
   }
-release:
-  yfs->release(inu);
-  return;
 #else
   fuse_reply_err(req, ENOSYS);
 #endif
@@ -440,21 +435,22 @@ fuseserver_lookup(fuse_req_t req, fuse_ino_t parent, const char *name)
     if(getattr(inum_c, st) == yfs_client::OK)
       e.attr = st;
   }
-  if (found)
-  {
-    tprintf("fuseserver_lookup parent:%016lx name:%s, Found \n", parent, name); 
-    fuse_reply_entry(req, &e);
-  }
-  else
-  {
-    tprintf("fuseserver_lookup parent:%016lx name:%s, NOT Found\n", parent, name); 
-    fuse_reply_err(req, ENOENT);
-  }
-release:
+
   yfs->release(inum_p);
   if (found)
   {
     yfs->release(inum_c);
+  }
+
+  if (found)
+  {
+    //tprintf("fuseserver_lookup parent:%016lx name:%s, Found \n", parent, name); 
+    fuse_reply_entry(req, &e);
+  }
+  else
+  {
+    //tprintf("fuseserver_lookup parent:%016lx name:%s, NOT Found\n", parent, name); 
+    fuse_reply_err(req, ENOENT);
   }
   return;
 }
@@ -506,9 +502,9 @@ fuseserver_readdir(fuse_req_t req, fuse_ino_t ino, size_t size,
   tprintf("fuseserver_readdir\n");
 
   if(!yfs->isdir(inum)){
+    yfs->release(inum);
     fuse_reply_err(req, ENOTDIR);
     
-    yfs->release(inum);
     return;
   }
 
@@ -590,35 +586,41 @@ fuseserver_mkdir(fuse_req_t req, fuse_ino_t parent, const char *name,
     child_lock = true;
 
     ret = getattr(inum_c, st);
+
+
+    yfs->release(inum_p);
+    if (child_lock)
+    {
+      yfs->release(inum_c);
+    }
+
     if(ret == yfs_client::OK)
     {
-      tprintf("fuseserver_mkdir getattr,inum_c:%016llx , return  OK \n", inum_c); 
+      //tprintf("fuseserver_mkdir getattr,inum_c:%016llx , return  OK \n", inum_c); 
       e.attr = st;
       fuse_reply_entry(req, &e);
-      goto release;
+      //goto release;
+      return;
     }
     else
     {
-        tprintf("fuseserver_mkdir getattr,inum_c:%016llx , return %d \n", inum_c, ret); 
+        //tprintf("fuseserver_mkdir getattr,inum_c:%016llx , return %d \n", inum_c, ret); 
         fuse_reply_err(req, ENOSYS);
-        goto release;
+        //goto release;
+        return;
     }
   }
   else if (ret == yfs_client::EXIST)
   {
     fuse_reply_err(req, EEXIST);
-    goto release;
+    //goto release;
+    return;
   }
   else
   {
     fuse_reply_err(req, ENOENT);
-    goto release;
-  }
-release:
-  yfs->release(inum_p);
-  if (child_lock)
-  {
-    yfs->release(inum_c);
+    //goto release;
+    return;
   }
   return;
 #else
@@ -647,7 +649,7 @@ fuseserver_unlink(fuse_req_t req, fuse_ino_t parent, const char *name)
   ret = yfs->unlink(inum_p, name);
   tprintf("fuseserver_unlink parent:%016lx name:%s, RETURN %d \n", parent, name, ret); 
 
-release:
+//release:
   yfs->release(inum_p);
   if(ret == yfs_client::OK)
   {
