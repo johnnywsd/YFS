@@ -153,6 +153,74 @@ proposer::prepare(unsigned instance, std::vector<std::string> &accepts,
   // You fill this in for Lab 6
   // Note: if got an "oldinstance" reply, commit the instance using
   // acc->commit(...), and return false.
+  int new_my_n = acc->get_n_h().n;
+  if ( new_my_n > my_n)
+  {
+    my_n = new_my_n + 1;
+  }
+  else
+  {
+    my_n = my_n + 1;
+  }
+  prop_t max_n_a;
+  max_n_a.n = 0;
+  max_n_a.m = "";
+
+  for (int i=0; i<nodes.size(), i++)
+  {
+    handle h(nodes[i]);
+    if(h.safebind())
+    {
+      tprintf("proposer::prepare, node[i]:%s\n", node[i].c_str());
+      paxos_protocol::prepareres res;
+      paxos_protocol::preparearg arg;
+      arg.instance = instance;
+      arg.n = my_n;
+      paxos_protocol::status ret = 0;
+      ret =h.safebind()->call(
+          paxos_protocol::preparereq,
+          me, arg, res, rpcc::to(1000) 
+          );
+      if(ret == paxos_protocol::OK)
+      {
+        if(res.oldinstance)
+        {
+          tprintf("proposer::prepare, node[i]:%s, oldinstance=True\n",
+              node[i].c_str());
+          acc->commit(instance, res.v_a);
+          stable = true;
+          return false;
+        }
+        else if (res.accept)
+        {
+          accepts.push_back(nodes[i]);
+          if(res.v_a.size() != 0 && res.n_a > max_n_a)
+          {
+            max_n_a = res.n_a;
+            v = res.v_a;
+          }
+        }
+        else
+        {
+          tprintf("proposer::prepare, node[i]:%s, Rejected\n",
+              node[i].c_str());
+          return false;
+        }
+      }
+      else
+      {
+        tprintf("proposer::prepare, node[i]:%s,"
+            "call preparereq FAILED, ret:%d\n",
+            node[i].c_str(), ret);
+      }
+    }
+    else
+    {
+      tprintf("proposer::prepare, node[i]:%s\n, FAILED safebind",
+          node[i].c_str());
+    }
+  }
+
   return false;
 }
 
