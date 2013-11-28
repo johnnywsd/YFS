@@ -34,12 +34,11 @@ class acceptor {
           paxos_protocol::preparearg a,
           paxos_protocol::prepareres &r);
   paxos_protocol::status acceptreq(std::string src, 
-          paxos_protocol::acceptarg a, int &r);
+          paxos_protocol::acceptarg a, bool &r);
   paxos_protocol::status decidereq(std::string src, 
           paxos_protocol::decidearg a, int &r);
 
   friend class log;
-  friend class proposer;
 
  public:
   acceptor(class paxos_change *cfg, bool _first, std::string _me, 
@@ -71,8 +70,6 @@ class proposer {
 
   // Proposer state
   bool stable;
-  std::vector<std::string> c_nodes;	// nodes in this instance
-  std::string c_v;	// value we would like to propose
   prop_t my_n;		// number of the last proposal used in this instance
 
   void setn();
@@ -92,7 +89,7 @@ class proposer {
  public:
   proposer(class paxos_change *cfg, class acceptor *_acceptor, std::string _me);
   ~proposer() {};
-  bool run(int instance, std::vector<std::string> nodes, std::string v);
+  bool run(int instance, std::vector<std::string> cnodes, std::string v);
   bool isrunning();
   void breakpoint(int b);
 };
