@@ -171,7 +171,8 @@ proposer::prepare(unsigned instance, std::vector<std::string> &accepts,
   for (unsigned i=0; i<nodes.size(); i++)
   {
     handle h(nodes[i]);
-    if(h.safebind())
+    rpcc *cl = h.safebind();
+    if(cl)
     {
       tprintf("proposer::prepare, node[i]:%s\n", nodes[i].c_str());
       paxos_protocol::prepareres res;
@@ -181,7 +182,7 @@ proposer::prepare(unsigned instance, std::vector<std::string> &accepts,
       arg.n = my_n;
 
       paxos_protocol::status ret = 0;
-      ret =h.safebind()->call(
+      ret =cl->call(
           paxos_protocol::preparereq,
           me,
           arg,
@@ -203,15 +204,16 @@ proposer::prepare(unsigned instance, std::vector<std::string> &accepts,
           accepts.push_back(nodes[i]);
           if(res.v_a.size() != 0 && res.n_a > max_n_a)
           {
-            max_n_a = res.n_a;
+            tprintf("proposer::prepare, node[i]:%s, res.accept=True\n",
+                nodes[i].c_str());
             v = res.v_a;
+            max_n_a = res.n_a;
           }
         }
         else
         {
           tprintf("proposer::prepare, node[i]:%s, Rejected\n",
               nodes[i].c_str());
-          return false;
         }
       }
       else
@@ -241,7 +243,8 @@ proposer::accept(unsigned instance, std::vector<std::string> &accepts,
   for(unsigned i=0; i<nodes.size(); i++)
   {
     handle h(nodes[i]);
-    if(h.safebind())
+    rpcc *cl = h.safebind();
+    if(cl)
     {
       int res = 0;
       paxos_protocol::acceptarg arg;
@@ -250,7 +253,7 @@ proposer::accept(unsigned instance, std::vector<std::string> &accepts,
       arg.instance = instance;
 
       paxos_protocol::status ret = 0;
-      ret = h.safebind()->call(
+      ret = cl->call(
           paxos_protocol::acceptreq,
           me,
           arg,
@@ -262,6 +265,8 @@ proposer::accept(unsigned instance, std::vector<std::string> &accepts,
         if (res)
         {
           accepts.push_back(nodes[i]);
+          tprintf("proposer::accept, node[i]:%s, Accepted\n",
+              nodes[i].c_str());
         }
         else
         {
@@ -296,20 +301,18 @@ proposer::decide(unsigned instance, std::vector<std::string> accepts,
     paxos_protocol::decidearg arg;
     arg.v = v;
     arg.instance = instance;
-    //rpcc *cl = h.safebind();
-    //if (cl) {
-      //ret = cl->call(paxos_protocol::heartbeat, me, vid, r, 
-               //rpcc::to(1000));
-    //} 
-    if (h.safebind())
+    rpcc *cl = h.safebind();
+    if (cl)
     {
-      h.safebind()->call(
+      cl->call(
           paxos_protocol::decidereq,
           me,
           arg,
           res,
           rpcc::to(1000)
           );
+      tprintf("proposer::accept, node[i]:%s\n, called dicidreq, instance:%u,v:%s",
+          accepts[i].c_str(), instance, v.c_str());
     }
     else
     {
@@ -357,6 +360,9 @@ acceptor::preparereq(std::string src, paxos_protocol::preparearg a,
     r.oldinstance = 1;
     r.accept = instance_h;
     r.v_a = values[instance_h];
+    tprintf("proposer::preparereq, src:%s, a.instance<=instance_h "
+        "a.instance:%u, instance_h:%u, r.v_a:%s\n ",
+          src.c_str(), a.instance, instance_h, r.v_a.c_str());
   }
   else if (a.n > n_h)
   {
@@ -367,11 +373,16 @@ acceptor::preparereq(std::string src, paxos_protocol::preparearg a,
     r.v_a = v_a;
 
     l->logprop(n_h);
+    tprintf("proposer::preparereq, src:%s, a.instance>instance_h and a.n>a.h "
+        "a.instance:%u, instance_h:%u, r.v_a:%s\n",
+          src.c_str(), a.instance, instance_h, r.v_a.c_str());
   }
   else
   {
     r.oldinstance = 0;
     r.accept = 0;
+    tprintf("proposer::preparereq, src:%s, Else\n",
+        src.c_str());
   }
   return paxos_protocol::OK;
 
@@ -387,7 +398,9 @@ acceptor::acceptreq(std::string src, paxos_protocol::acceptarg a, int &r)
   // Remember to *log* the accept if the proposal is accepted.
   if ( a.instance <= instance_h )
   {
-
+    tprintf("proposer::acceptreq, src:%s, a.instance<instance_h "
+        "a.instance:%u, instance_h:%u\n",
+          src.c_str(), a.instance, instance_h);
   }
   else if ( a.n >= n_h )
   {
@@ -395,10 +408,16 @@ acceptor::acceptreq(std::string src, paxos_protocol::acceptarg a, int &r)
     v_a = a.v;
     l->logaccept(a.n, a.v);
     r = 1;
+    tprintf("proposer::acceptreq, src:%s, a.instance>instance_h and a.n<a.h "
+            "a.instance:%u, instance_h:%u, v_a:%s\n",
+              src.c_str(), a.instance, instance_h, v_a.c_str());
+
   }
   else
   {
     r = 0;
+    tprintf("proposer::acceptreq, src:%s, Else\n",
+        src.c_str());
   }
   return paxos_protocol::OK;
 }
@@ -417,7 +436,6 @@ acceptor::decidereq(std::string src, paxos_protocol::decidearg a, int &r)
     // we are ahead ignore.
   } else {
     // we are behind
-    //commit(a.instance, v_a);
     VERIFY(0);
   }
   return paxos_protocol::OK;
