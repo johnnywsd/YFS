@@ -246,7 +246,7 @@ proposer::accept(unsigned instance, std::vector<std::string> &accepts,
     rpcc *cl = h.safebind();
     if(cl)
     {
-      int res = 0;
+      bool res = false;
       paxos_protocol::acceptarg arg;
       arg.n = my_n;
       arg.v = v;
@@ -389,10 +389,8 @@ acceptor::preparereq(std::string src, paxos_protocol::preparearg a,
 }
 
 // the src argument is only for debug purpose
-//paxos_protocol::status
-//acceptor::acceptreq(std::string src, paxos_protocol::acceptarg a, bool &r)
 paxos_protocol::status
-acceptor::acceptreq(std::string src, paxos_protocol::acceptarg a, int &r)
+acceptor::acceptreq(std::string src, paxos_protocol::acceptarg a, bool &r)
 {
   // You fill this in for Lab 6
   // Remember to *log* the accept if the proposal is accepted.
@@ -407,7 +405,7 @@ acceptor::acceptreq(std::string src, paxos_protocol::acceptarg a, int &r)
     n_a = a.n;
     v_a = a.v;
     l->logaccept(a.n, a.v);
-    r = 1;
+    r = true;
     tprintf("proposer::acceptreq, src:%s, a.instance>instance_h and a.n<a.h "
             "a.instance:%u, instance_h:%u, v_a:%s\n",
               src.c_str(), a.instance, instance_h, v_a.c_str());
@@ -415,7 +413,7 @@ acceptor::acceptreq(std::string src, paxos_protocol::acceptarg a, int &r)
   }
   else
   {
-    r = 0;
+    r = false;
     tprintf("proposer::acceptreq, src:%s, Else\n",
         src.c_str());
   }
