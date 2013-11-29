@@ -153,25 +153,25 @@ proposer::prepare(unsigned instance, std::vector<std::string> &accepts,
   // You fill this in for Lab 6
   // Note: if got an "oldinstance" reply, commit the instance using
   // acc->commit(...), and return false.
-  int new_my_n = acc->get_n_h().n;
-  if ( new_my_n > my_n)
+  int new_my_n_n = acc->get_n_h().n;
+  if ( new_my_n_n > my_n.n)
   {
-    my_n = new_my_n + 1;
+    my_n.n = new_my_n_n + 1;
   }
   else
   {
-    my_n = my_n + 1;
+    my_n.n = my_n.n + 1;
   }
   prop_t max_n_a;
   max_n_a.n = 0;
   max_n_a.m = "";
 
-  for (int i=0; i<nodes.size(), i++)
+  for (int i=0; i<nodes.size(); i++)
   {
     handle h(nodes[i]);
     if(h.safebind())
     {
-      tprintf("proposer::prepare, node[i]:%s\n", node[i].c_str());
+      tprintf("proposer::prepare, node[i]:%s\n", nodes[i].c_str());
       paxos_protocol::prepareres res;
       paxos_protocol::preparearg arg;
       arg.instance = instance;
@@ -186,7 +186,7 @@ proposer::prepare(unsigned instance, std::vector<std::string> &accepts,
         if(res.oldinstance)
         {
           tprintf("proposer::prepare, node[i]:%s, oldinstance=True\n",
-              node[i].c_str());
+              nodes[i].c_str());
           acc->commit(instance, res.v_a);
           stable = true;
           return false;
@@ -203,7 +203,7 @@ proposer::prepare(unsigned instance, std::vector<std::string> &accepts,
         else
         {
           tprintf("proposer::prepare, node[i]:%s, Rejected\n",
-              node[i].c_str());
+              nodes[i].c_str());
           return false;
         }
       }
@@ -211,13 +211,13 @@ proposer::prepare(unsigned instance, std::vector<std::string> &accepts,
       {
         tprintf("proposer::prepare, node[i]:%s,"
             "call preparereq FAILED, ret:%d\n",
-            node[i].c_str(), ret);
+            nodes[i].c_str(), ret);
       }
     }
     else
     {
       tprintf("proposer::prepare, node[i]:%s\n, FAILED safebind",
-          node[i].c_str());
+          nodes[i].c_str());
     }
   }
 
@@ -231,6 +231,50 @@ proposer::accept(unsigned instance, std::vector<std::string> &accepts,
         std::vector<std::string> nodes, std::string v)
 {
   // You fill this in for Lab 6
+  for(int i=0; i<nodes.size(); i++)
+  {
+    handle h(nodes[i]);
+    if(h.safebind())
+    {
+      int res = 0;
+      paxos_protocol::acceptarg arg;
+      arg.n = my_n;
+      arg.v = v;
+      arg.instance = instance;
+
+      paxos_protocol::status ret = 0;
+      ret = h.safebind()->call(
+          paxos_protocol::acceptreq,
+          me,
+          arg,
+          res,
+          rpcc::to(1000)
+          );
+      if (ret == paxos_protocol::OK)
+      {
+        if (res)
+        {
+          accepts.push_back(nodes[i]);
+        }
+        else
+        {
+          tprintf("proposer::accept, node[i]:%s, Rejected\n",
+              nodes[i].c_str());
+        }
+      }
+      else
+      {
+        tprintf("proposer::prepare, node[i]:%s,"
+            "call preparereq FAILED, ret:%d\n",
+            nodes[i].c_str(), ret);
+      }
+    }
+    else
+    {
+      tprintf("proposer::accept, node[i]:%s\n, FAILED safebind",
+          nodes[i].c_str());
+    }
+  }
 }
 
 void
@@ -238,6 +282,34 @@ proposer::decide(unsigned instance, std::vector<std::string> accepts,
 	      std::string v)
 {
   // You fill this in for Lab 6
+  for (int i=0; i< accepts.size(); i++)
+  {
+    handle h(accepts[i]);
+    int res = 0;
+    paxos_protocol::decidearg arg;
+    arg.v = v;
+    arg.instance = instance;
+    //rpcc *cl = h.safebind();
+    //if (cl) {
+      //ret = cl->call(paxos_protocol::heartbeat, me, vid, r, 
+               //rpcc::to(1000));
+    //} 
+    if (h.safebind())
+    {
+      h.safebind()->call(
+          paxos_protocol::decidereq,
+          me,
+          arg,
+          res,
+          rpcc::to(1000)
+          );
+    }
+    else
+    {
+      tprintf("proposer::accept, node[i]:%s\n, FAILED safebind",
+          accepts[i].c_str());
+    }
+  }
 }
 
 acceptor::acceptor(class paxos_change *_cfg, bool _first, std::string _me, 
