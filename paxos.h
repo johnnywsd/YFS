@@ -33,8 +33,10 @@ class acceptor {
   paxos_protocol::status preparereq(std::string src, 
           paxos_protocol::preparearg a,
           paxos_protocol::prepareres &r);
+  //paxos_protocol::status acceptreq(std::string src, 
+          //paxos_protocol::acceptarg a, bool &r);
   paxos_protocol::status acceptreq(std::string src, 
-          paxos_protocol::acceptarg a, bool &r);
+          paxos_protocol::acceptarg a, int &r);
   paxos_protocol::status decidereq(std::string src, 
           paxos_protocol::decidearg a, int &r);
 
