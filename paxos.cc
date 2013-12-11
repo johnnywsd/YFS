@@ -153,7 +153,84 @@ proposer::prepare(unsigned instance, std::vector<std::string> &accepts,
   // You fill this in for Lab 6
   // Note: if got an "oldinstance" reply, commit the instance using
   // acc->commit(...), and return false.
-  return false;
+  unsigned new_my_n_n = acc->get_n_h().n;
+  if ( new_my_n_n > my_n.n)
+  {
+    my_n.n = new_my_n_n + 1;
+  }
+  else
+  {
+    my_n.n = my_n.n + 1;
+  }
+  my_n.m = me;
+
+  prop_t max_n_a;
+  max_n_a.n = 0;
+  max_n_a.m = std::string();
+
+  for (unsigned i=0; i<nodes.size(); i++)
+  {
+    handle h(nodes[i]);
+    rpcc *cl = h.safebind();
+    if(cl)
+    {
+      tprintf("proposer::prepare, node[i]:%s\n", nodes[i].c_str());
+      paxos_protocol::prepareres res;
+      paxos_protocol::preparearg arg;
+
+      arg.instance = instance;
+      arg.n = my_n;
+
+      paxos_protocol::status ret = 0;
+      ret =cl->call(
+          paxos_protocol::preparereq,
+          me,
+          arg,
+          res,
+          rpcc::to(1000) 
+          );
+      if(ret == paxos_protocol::OK)
+      {
+        if(res.oldinstance)
+        {
+          tprintf("proposer::prepare, node[i]:%s, oldinstance=True\n",
+              nodes[i].c_str());
+          acc->commit(instance, res.v_a);
+          stable = true;
+          return false;
+        }
+        else if (res.accept)
+        {
+          accepts.push_back(nodes[i]);
+          if(res.v_a.size() != 0 && res.n_a > max_n_a)
+          {
+            tprintf("proposer::prepare, node[i]:%s, res.accept=True\n",
+                nodes[i].c_str());
+            v = res.v_a;
+            max_n_a = res.n_a;
+          }
+        }
+        else
+        {
+          tprintf("proposer::prepare, node[i]:%s, Rejected\n",
+              nodes[i].c_str());
+        }
+      }
+      else
+      {
+        tprintf("proposer::prepare, node[i]:%s,"
+            "call preparereq FAILED, ret:%d\n",
+            nodes[i].c_str(), ret);
+      }
+    }
+    else
+    {
+      tprintf("proposer::prepare, node[i]:%s\n, FAILED safebind",
+          nodes[i].c_str());
+    }
+  }
+
+  return true;
 }
 
 // run() calls this to send out accept RPCs to accepts.
@@ -163,6 +240,53 @@ proposer::accept(unsigned instance, std::vector<std::string> &accepts,
         std::vector<std::string> nodes, std::string v)
 {
   // You fill this in for Lab 6
+  for(unsigned i=0; i<nodes.size(); i++)
+  {
+    handle h(nodes[i]);
+    rpcc *cl = h.safebind();
+    if(cl)
+    {
+      bool res = false;
+      paxos_protocol::acceptarg arg;
+      arg.n = my_n;
+      arg.v = v;
+      arg.instance = instance;
+
+      paxos_protocol::status ret = 0;
+      ret = cl->call(
+          paxos_protocol::acceptreq,
+          me,
+          arg,
+          res,
+          rpcc::to(1000)
+          );
+      if (ret == paxos_protocol::OK)
+      {
+        if (res)
+        {
+          accepts.push_back(nodes[i]);
+          tprintf("proposer::accept, node[i]:%s, Accepted\n",
+              nodes[i].c_str());
+        }
+        else
+        {
+          tprintf("proposer::accept, node[i]:%s, Rejected\n",
+              nodes[i].c_str());
+        }
+      }
+      else
+      {
+        tprintf("proposer::prepare, node[i]:%s,"
+            "call preparereq FAILED, ret:%d\n",
+            nodes[i].c_str(), ret);
+      }
+    }
+    else
+    {
+      tprintf("proposer::accept, node[i]:%s\n, FAILED safebind",
+          nodes[i].c_str());
+    }
+  }
 }
 
 void
@@ -170,6 +294,32 @@ proposer::decide(unsigned instance, std::vector<std::string> accepts,
 	      std::string v)
 {
   // You fill this in for Lab 6
+  for (unsigned i=0; i< accepts.size(); i++)
+  {
+    handle h(accepts[i]);
+    int res = 0;
+    paxos_protocol::decidearg arg;
+    arg.v = v;
+    arg.instance = instance;
+    rpcc *cl = h.safebind();
+    if (cl)
+    {
+      cl->call(
+          paxos_protocol::decidereq,
+          me,
+          arg,
+          res,
+          rpcc::to(1000)
+          );
+      tprintf("proposer::accept, node[i]:%s\n, called dicidreq, instance:%u,v:%s",
+          accepts[i].c_str(), instance, v.c_str());
+    }
+    else
+    {
+      tprintf("proposer::accept, node[i]:%s\n, FAILED safebind",
+          accepts[i].c_str());
+    }
+  }
 }
 
 acceptor::acceptor(class paxos_change *_cfg, bool _first, std::string _me, 
@@ -205,6 +355,35 @@ acceptor::preparereq(std::string src, paxos_protocol::preparearg a,
   // You fill this in for Lab 6
   // Remember to initialize *BOTH* r.accept and r.oldinstance appropriately.
   // Remember to *log* the proposal if the proposal is accepted.
+  if (a.instance <= instance_h)
+  {
+    r.oldinstance = 1;
+    r.accept = instance_h;
+    r.v_a = values[instance_h];
+    tprintf("proposer::preparereq, src:%s, a.instance<=instance_h "
+        "a.instance:%u, instance_h:%u, r.v_a:%s\n ",
+          src.c_str(), a.instance, instance_h, r.v_a.c_str());
+  }
+  else if (a.n > n_h)
+  {
+    n_h = a.n;
+    r.oldinstance = 0;
+    r.accept = 1;
+    r.n_a = n_a;
+    r.v_a = v_a;
+
+    l->logprop(n_h);
+    tprintf("proposer::preparereq, src:%s, a.instance>instance_h and a.n>a.h "
+        "a.instance:%u, instance_h:%u, r.v_a:%s\n",
+          src.c_str(), a.instance, instance_h, r.v_a.c_str());
+  }
+  else
+  {
+    r.oldinstance = 0;
+    r.accept = 0;
+    tprintf("proposer::preparereq, src:%s, Else\n",
+        src.c_str());
+  }
   return paxos_protocol::OK;
 
 }
@@ -215,7 +394,29 @@ acceptor::acceptreq(std::string src, paxos_protocol::acceptarg a, bool &r)
 {
   // You fill this in for Lab 6
   // Remember to *log* the accept if the proposal is accepted.
+  if ( a.instance <= instance_h )
+  {
+    tprintf("proposer::acceptreq, src:%s, a.instance<instance_h "
+        "a.instance:%u, instance_h:%u\n",
+          src.c_str(), a.instance, instance_h);
+  }
+  else if ( a.n >= n_h )
+  {
+    n_a = a.n;
+    v_a = a.v;
+    l->logaccept(a.n, a.v);
+    r = true;
+    tprintf("proposer::acceptreq, src:%s, a.instance>instance_h and a.n<a.h "
+            "a.instance:%u, instance_h:%u, v_a:%s\n",
+              src.c_str(), a.instance, instance_h, v_a.c_str());
 
+  }
+  else
+  {
+    r = false;
+    tprintf("proposer::acceptreq, src:%s, Else\n",
+        src.c_str());
+  }
   return paxos_protocol::OK;
 }
 
