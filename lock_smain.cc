@@ -66,25 +66,16 @@ main(int argc, char *argv[])
 #endif // STEP_ONE
 #endif // RSM
 
-#ifndef RSM
-  //lock_server ls;
-  lock_server_cache ls;
+//commented in lab7
+//#ifndef RSM
+  ////lock_server ls;
+  //lock_server_cache ls;
 
-  rpcs server(atoi(argv[1]), count);  //atoi(argv[1]) == port, count == PRC_COUNT, or 0. Init a rpcs
-
-  //server.reg(lock_protocol::stat, &ls, &lock_server::stat); // regerist the rpcs.   
-
-  //[>*****************************************************************<]
-  //server.reg(lock_protocol::acquire, &ls, &lock_server::acquire);
-  //server.reg(lock_protocol::release, &ls, &lock_server::release);
-  //[>*****************************************************************<]
-  
-  server.reg(lock_protocol::stat, &ls, &lock_server_cache::stat); // regerist the rpcs.   
-  /*******************************************************************/
-  server.reg(lock_protocol::acquire, &ls, &lock_server_cache::acquire);
-  server.reg(lock_protocol::release, &ls, &lock_server_cache::release);
-  /*******************************************************************/
-#endif
+  //rpcs server(atoi(argv[1]), count);  
+  //server.reg(lock_protocol::stat, &ls, &lock_server_cache::stat); 
+  //server.reg(lock_protocol::acquire, &ls, &lock_server_cache::acquire);
+  //server.reg(lock_protocol::release, &ls, &lock_server_cache::release);
+//#endif
 
 
   while(1)
